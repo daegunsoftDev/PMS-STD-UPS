@@ -3,7 +3,7 @@
   <DUT Name="ST_RedSyncCfg" Id="{f18afe74-1757-4b56-b5be-31a92f539ca5}">
     <Declaration><![CDATA[TYPE ST_RedSyncCfg :		// 동기화할 운영 설정 (GVL_PERSIST와 같은 모양. 모듈 설정 묶음 g_stModuleSet은 HMI가 두 PLC에 쓰므로 제외). 두 PLC가 EAP로 서로에게 매 스캔 보냄 (FB_RedSync). 필드를 바꾸면 두 PLC의 EAP 변수도 같이 바꿈
 STRUCT
-	nProtoVer		: UINT := 1;	// 형식 번호
+	nProtoVer		: UINT := 2;	// 형식 번호 (2: UPS 항목 추가, 명세 RED-01 v2.43. 두 PLC 프로그램이 달라 번호가 다르면 받은 값을 쓰지 않음)
 	nSeq			: UDINT;		// 보낼 때마다 1 증가. 상대가 이 값이 바뀌는지로 살아 있음을 봄
 	nModeReq1		: UINT;			// 제어 모드 요청 접속점 그룹 1 (GVL_SITE.g_fbCtrlMode1.i_nModeReq). [16번 수정 2026-11-09: nModeReq2(PCS2) 없앰]
 	aeOpMode		: ARRAY[1..GVL_PARAM.UNIT_COUNT] OF E_OpMode;
@@ -21,6 +21,8 @@ STRUCT
 	stManualCmdSet	: ST_ManualCmdSet;
 	stSeqSet		: ST_SeqSet;
 	stBrokerWatch	: ST_BrokerWatchSet;	// MQTT 브로커 끊김 감시 [9번 수정 2026-11-09: 추가]
+	astUpsDesired	: ARRAY[1..GVL_PARAM.UPS_COUNT] OF ST_UpsDesiredSet;	// UPS 설정 보관값 (GVL_PERSIST.g_astUpsDesired, 명세 RED-01 v2.43)
+	bUpsSafetyRespEnable : BOOL;	// 사고·고장 대응 스위치 (GVL_PERSIST.g_bUpsSafetyRespEnable, 명세 RED-01 v2.43)
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>

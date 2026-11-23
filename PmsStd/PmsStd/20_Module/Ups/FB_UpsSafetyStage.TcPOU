@@ -13,6 +13,7 @@
          - b13: MBS C/B Fail(Fault2 b14, I50 b7). 단계 없음, 대응만
    변경: 2026-11-23 Fault(4~6단계)도 원인이 풀리면 바로 내림. 확인 전 유지(래치)와 i_bAck·q_bAckPending·q_nLatched·q_bAckPulse·q_nAckCleared 없앰
          (명세 SQ-01 v2.38: 확인은 EMS가 하므로 PMS에 확인 신호가 오지 않아, 붙잡은 Fault가 재시작 전까지 안 풀렸음)
+   변경: 2026-11-23 i_bClear 추가: 이중화 대기 중에는 원인을 비움 (명세 RED-02 v2.45: 장비를 읽지 않으니 마지막 값이 옛 값. 넘겨받는 순간 옛 값으로 대응하지 않게)
    부호·단위: 해당 없음. 명세: C:\gil\UPS\명세작업\UPS_명세서.md SQ-01, SQ-05
    차단·정지는 UPS(UMS)와 BMS가 스스로 한다. 이 FB는 판정과 표시만 하고 장비에 아무것도 쓰지 않는다. *)
 FUNCTION_BLOCK FB_UpsSafetyStage
@@ -22,6 +23,7 @@ VAR_INPUT
 	i_stBat			: ST_BatPublish_V1;	// 짝 BAT 보고값 (FB_RptEsolutionBat.q_stBat)
 	i_bBatValid		: BOOL;				// BAT 데이터 유효 (통신 정상)
 	i_tOutOcDelay	: TIME := T#15M;	// 출력 과전류 R/S/T가 이만큼 계속되면 대응 (세방 맵 '15분후 인버터정지 To Bypass', SQ-05 v2.30)
+	i_bClear		: BOOL;				// 원인을 비움 (이중화 대기 중, 명세 RED-02 v2.45). 통신 끊김 때 마지막 값 유지보다 우선
 	i_tBattOcDelay	: TIME := T#10M;	// 배터리 과전류가 이만큼 계속되면 대응 (세방 맵 '10분후 정지', SQ-05 v2.30)
 END_VAR
 VAR_OUTPUT
@@ -111,6 +113,14 @@ IF i_bBatValid THEN
 	IF i_stBat.Status.9 THEN _nBatCause := _nBatCause OR 16#0400; END_IF	// BMS Level 3 (System Lock)
 END_IF
 
+// 이중화 대기 중: 원인과 지연 타이머를 비움 (명세 RED-02 v2.45)
+IF i_bClear THEN
+	_nUpsCause := 0;
+	_nBatCause := 0;
+	_nUpsResp := 0;
+	_tonOutOc(IN := FALSE, PT := i_tOutOcDelay);
+	_tonBattOc(IN := FALSE, PT := i_tBattOcDelay);
+END_IF
 q_nActiveCause := _nUpsCause OR _nBatCause;
 q_nRespCause := _nUpsResp OR _nBatCause;
 

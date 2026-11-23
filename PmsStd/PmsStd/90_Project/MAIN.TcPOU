@@ -32,6 +32,13 @@ VAR
 	fbAlive			: FB_AliveRecorder;
 	fbPersistSave	: FB_PersistSave;
 	fbCtrlUps		: FB_S_UPS_CX51x0;	// 제어기(CX5130) 내장 1초 UPS 전원 장애 감지 (명세 CF-UPS-02 v2.39, HELIOS FB_PmsStatus와 같음). 상태 확인만, 윈도우 종료 안 함
+	nSyncAppliedLast	: UDINT;	// 이중화 동기화 횟수 (지난 스캔). 바뀌면 바로 저장 (명세 RED-01 v2.43)
+	bSyncApplied	: BOOL;
+	bDevRead		: BOOL;	// 장비를 읽고 써도 됨 = 이중화를 안 쓰거나 이 PLC가 동작 중(Active) (명세 RED-02 v2.44)
+	bDevInstRead	: BOOL;	// 설치 여부를 기억했음
+	aabRuleLog		: ARRAY[1..GVL_PARAM.RULE_COUNT, 1..GVL_PARAM.PROT_TARGET_MAX] OF BOOL;	// 로그로 넘기는 보호 발생 (이중화 대기 중 BMS 통신 끊김을 뺌, RED-02 v2.45)
+	nRuleT			: UINT;
+	abDevInst		: ARRAY[1..8] OF BOOL;	// 선언의 i_bEnable (설치 여부): 1 UPS1, 2 BMS1, 3 IMD1, 4 THD1, 5 RIO1, 6 THD2, 7 GFR1, 8 ASD57
 	fbConfigCheck	: FB_ConfigCheck;
 	fbSettingGuard	: FB_SettingGuard;	// 운전 중 바꾸는 설정 값 지키기
 	fbModuleList	: FB_ModuleList;
@@ -204,6 +211,28 @@ fbConfigCheck(	iq_astUnitCfg	:= GVL_SITE.UNIT_CFG,
 				iq_abUnitInstalled	:= fbModuleList.q_abUnitInstalled);
 
 (* ===== 1. 읽기 · 스냅샷 · 계측 ===== *)
+// 이중화 (명세 RED-02 v2.44): 대기 중인 PLC는 장비(TCP·RS-485)에 접속하지 않음. 동작 중인 쪽만 읽고 씀 (평소 프라이머리, 프라이머리가 죽으면 세컨더리)
+// 설치 여부(GVL_SITE 선언의 i_bEnable)는 처음 한 번 기억. 이중화를 안 쓰면 늘 설치 여부 그대로. EtherCAT 단자(g_fbIo1)는 PLC마다 배선하므로 끄지 않음
+IF NOT bDevInstRead THEN
+	abDevInst[1] := GVL_SITE.g_fbUps1.i_bEnable;
+	abDevInst[2] := GVL_SITE.g_fbBms1.i_bEnable;
+	abDevInst[3] := GVL_SITE.g_fbImd1.i_bEnable;
+	abDevInst[4] := GVL_SITE.g_fbThd1.i_bEnable;
+	abDevInst[5] := GVL_SITE.g_fbRio1.i_bEnable;
+	abDevInst[6] := GVL_SITE.g_fbThd2.i_bEnable;
+	abDevInst[7] := GVL_SITE.g_fbGfr1.i_bEnable;
+	abDevInst[8] := GVL_SITE.g_fbAsd57.i_bEnable;
+	bDevInstRead := TRUE;
+END_IF
+bDevRead := NOT GVL_SITE.RED_SET.bUse OR GVL_IF.g_bRedActive;
+GVL_SITE.g_fbUps1.i_bEnable := abDevInst[1] AND bDevRead;
+GVL_SITE.g_fbBms1.i_bEnable := abDevInst[2] AND bDevRead;
+GVL_SITE.g_fbImd1.i_bEnable := abDevInst[3] AND bDevRead;
+GVL_SITE.g_fbThd1.i_bEnable := abDevInst[4] AND bDevRead;
+GVL_SITE.g_fbRio1.i_bEnable := abDevInst[5] AND bDevRead;
+GVL_SITE.g_fbThd2.i_bEnable := abDevInst[6] AND bDevRead;
+GVL_SITE.g_fbGfr1.i_bEnable := abDevInst[7] AND bDevRead;
+GVL_SITE.g_fbAsd57.i_bEnable := abDevInst[8] AND bDevRead;
 // UPS is a separate device type; no PCS power/set-state mapping is used.
 bUpsConfigOk:=TRUE;
 FOR i:=1 TO GVL_PARAM.UPS_COUNT DO
@@ -556,10 +585,13 @@ fbAlive(		iq_nLastAlive	:= GVL_PERSIST.g_nLastAliveLocal,
 
 // 제어기 전원 장애 (CF-UPS-02 v2.39): 내장 1초 UPS가 버티는 동안 바로 저장. 내장 UPS가 없는 제어기에서는 FALSE
 fbCtrlUps(eUpsMode := eSUPS_CheckPowerStatus);
+// 이중화 Standby가 Active 설정으로 맞췄으면 바로 저장 (RED-01 v2.43: UPS 보관값·대응 스위치는 아래 변경 감지에 없음)
+bSyncApplied := GVL_IF.g_nSyncApplied <> nSyncAppliedLast;
+nSyncAppliedLast := GVL_IF.g_nSyncApplied;
 // PERSISTENT 저장: 운영 설정이 바뀌면 1 s 뒤 바로, 그리고 주기마다 (GVL_PERSIST에 설정을 추가하면 여기도 연결)
 fbPersistSave(	i_tPeriod		:= GVL_SITE.LOG_SET.tPersistSave,
 				i_bSaveNow		:= fbUpsConfigApply[1].q_bDesiredChanged OR fbUpsCommand[1].q_bDesiredChanged OR fbBmsRack[1].q_bMaskChanged
-								OR fbCtrlUps.bPowerFailDetect,	// UPS 설정 보관값이 바뀌면 바로 저장 (CF-UPS-02). 제어기 전원 장애도 바로 (v2.39)
+								OR fbCtrlUps.bPowerFailDetect OR bSyncApplied,	// UPS 설정 보관값이 바뀌면 바로 저장 (CF-UPS-02). 제어기 전원 장애도 바로 (v2.39). 이중화 동기화로 바뀌어도 (RED-01 v2.43)
 				iq_aeOpMode		:= GVL_PERSIST.g_aeOpMode,
 				iq_astGroupSet	:= GVL_PERSIST.g_astGroupSet,
 				iq_astManualPolicy:= GVL_PERSIST.g_astManualPolicy,
@@ -588,6 +620,13 @@ fbOutputDiag(	iq_astAutoShape		:= fbAutoShape.q_astDiag,
 				iq_astUnitSet	:= fbDistributor.q_astUnitSet,
 				iq_astUnitCfg	:= GVL_SITE.UNIT_CFG);
 
+// 이중화 대기 중에는 보호 규칙 4 'BMS 통신 끊김'을 로그에 넘기지 않음 (일부러 접속 안 함, 명세 RED-02 v2.45). 칸 4 = GVL_SITE.g_aipRule의 g_fbProtBmsComm
+aabRuleLog := fbProtection.q_aabRule;
+IF NOT bDevRead THEN
+	FOR nRuleT := 1 TO GVL_PARAM.PROT_TARGET_MAX DO
+		aabRuleLog[4, nRuleT] := FALSE;
+	END_FOR
+END_IF
 fbEventLog(		i_stSet			:= GVL_SITE.LOG_SET,
 				i_bTestMode		:= GVL_SITE.TEST_MODE,
 				i_nConfigErrors	:= fbConfigCheck.q_nErrors,
@@ -615,7 +654,7 @@ fbEventLog(		i_stSet			:= GVL_SITE.LOG_SET,
 				i_bBrokerLost	:= fbBrokerWatch.q_bLost,		// [9번 수정 2026-11-09: 추가]
 				i_sBrokerName	:= fbBrokerWatch.q_sBroker,
 				i_sBrokerDelay	:= fbBrokerWatch.q_sDelay,
-				iq_aabRule		:= fbProtection.q_aabRule,
+				iq_aabRule		:= aabRuleLog,
 				iq_astRuleCfg	:= GVL_PERSIST.g_astRuleCfg,
 				iq_aeUnitSeq	:= fbSequencer.q_aeUnitSeq,
 				iq_aeRefuse		:= fbSequencer.q_aeRefuse,
@@ -820,11 +859,12 @@ FOR _nReportUps:=1 TO GVL_PARAM.UPS_COUNT DO
 	GVL_IF.g_stReport.astUps[_nReportUps]:=fbRptUps[_nReportUps].q_stUps;
 	// 명세 SQ-01: 사고·고장 단계. v2.38: Fault도 원인이 풀리면 바로 내림 (확인은 EMS가 함)
 	fbUpsSafety[_nReportUps](i_stUps:=fbRptUps[_nReportUps].q_stUps, i_bUpsValid:=fbRptUps[_nReportUps].q_bValid,
-		i_stBat:=fbRptBat[_nReportUps].q_stBat, i_bBatValid:=fbRptBat[_nReportUps].q_bValid);
+		i_stBat:=fbRptBat[_nReportUps].q_stBat, i_bBatValid:=fbRptBat[_nReportUps].q_bValid,
+		i_bClear:=NOT bDevRead);	// 이중화 대기 중에는 판정을 비움 (RED-02 v2.45)
 	// 명세 SQ-01 v2.21: 단계·원인 발생/해소를 PMS 이벤트 로그에 남김 (클래스 PmsUps, 로거 리스너가 받지 않아 pms_log로는 안 감)
 	fbUpsSafetyLog[_nReportUps](i_nUps:=_nReportUps, i_nStage:=fbUpsSafety[_nReportUps].q_nStage,
 		i_nActiveCause:=fbUpsSafety[_nReportUps].q_nActiveCause,
-		i_bUpsCommFault:=fbUpsSafety[_nReportUps].q_bUpsCommFault, i_bBatCommFault:=fbUpsSafety[_nReportUps].q_bBatCommFault,
+		i_bUpsCommFault:=fbUpsSafety[_nReportUps].q_bUpsCommFault AND bDevRead, i_bBatCommFault:=fbUpsSafety[_nReportUps].q_bBatCommFault AND bDevRead,	// 대기 중 통신장애 알람 없음 (RED-02 v2.45)
 		// 명세 SQ-05 기록 (v2.22): 대응 동작 명령·완료·10초 오류
 		i_wRespNeeded:=fbUpsSafetyResp[_nReportUps].q_wNeeded, i_wRespDone:=fbUpsSafetyResp[_nReportUps].q_wDone,
 		i_wRespFailed:=fbUpsSafetyResp[_nReportUps].q_wFailed, i_anRespTry:=fbUpsSafetyResp[_nReportUps].q_anTry,
