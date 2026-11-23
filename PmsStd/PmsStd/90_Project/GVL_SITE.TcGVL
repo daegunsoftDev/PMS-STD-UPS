@@ -89,12 +89,13 @@ VAR_GLOBAL
 	// 보고 매핑 (PCS 1 → MQTT pcs 레코드). 배율은 플라스포 레지스터 맵 확인 후 i_f…Scale에 줌. MAIN 액션 A_Report가 부름
 	g_fbRptPcs1		: FB_RptPlaspoPcs;
 	// 실제 PCS 예: g_fbPcs1 : FB_PlaspoPcs := (i_nModuleId := 1, i_sName := 'PCS1', i_sIpAddr := '192.168.0.100', i_tReadPeriod := T#1S);
-	g_fbBms1		: FB_EsolutionBms := (i_nModuleId := 11, i_sName := 'BMS1', i_nRackCount := GVL_PARAM.RACKS_PER_BMS, i_bReadDetails := TRUE, i_bEnable := TRUE, i_sIpAddr := '192.168.0.138', i_nPort := 504, i_nUnitId := 1); // 시험용: PC의 BMS 시뮬레이터 (03. simulator\ups_bms_sim.py)
+	g_fbBms1		: FB_EsolutionBms := (i_nModuleId := 11, i_sName := 'BMS1', i_tReadPeriod := T#1S, i_tDetailPeriod := T#100MS, i_nRackCount := GVL_PARAM.RACKS_PER_BMS, i_bReadDetails := TRUE, i_bEnable := TRUE, i_sIpAddr := '192.168.0.138', i_nPort := 504, i_nUnitId := 1); // 시험용: PC의 BMS 시뮬레이터 (03. simulator\ups_bms_sim.py)
 	g_fbMeter1		: FB_MeterSim	:= (i_nModuleId := 21, i_sName := 'PCC1');
 
+	(* 읽기 주기 (명세 DV-04 v2.46): UPS·BMS i_tReadPeriod = 한 바퀴 1 s (요청 여러 개를 연달아), BMS 랙 상세 i_tDetailPeriod 100 ms마다 한 조각 *)
 	(* UPS-only devices. TCP endpoints are deliberately empty and i_bEnable defaults FALSE.
 	   Set each endpoint from the equipment list before read-only commissioning. *)
-	g_fbUps1 : FB_SebangUps := (i_nModuleId := 41, i_sName := 'UPS1', i_bEnable := TRUE, i_sIpAddr := '192.168.0.138', i_nPort := 503, i_nUnitId := 1); // 시험용: PC의 UPS 시뮬레이터 (03. simulator\ups_bms_sim.py)
+	g_fbUps1 : FB_SebangUps := (i_nModuleId := 41, i_sName := 'UPS1', i_tReadPeriod := T#1S, i_bEnable := TRUE, i_sIpAddr := '192.168.0.138', i_nPort := 503, i_nUnitId := 1); // 시험용: PC의 UPS 시뮬레이터 (03. simulator\ups_bms_sim.py)
 	g_aipUps : ARRAY[1..GVL_PARAM.UPS_COUNT] OF I_Ups := [g_fbUps1];	// 현장 5: UPS 1대
 
 	(* ---------- 보조 장비: Helios에서 가져온 센서 드라이버 (2026-11-09). 맵·주소 미확보라 모두 i_bEnable FALSE (통신 안 함)

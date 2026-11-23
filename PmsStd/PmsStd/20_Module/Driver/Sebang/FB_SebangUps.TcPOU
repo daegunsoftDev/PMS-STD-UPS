@@ -30,6 +30,7 @@ VAR
 	_nPoll : UINT;
 	_nCopy : UINT;
 	_bReadDue : BOOL;
+	_bCycle : BOOL; // 2026-11-23 한 바퀴(요청 4개) 읽는 중. i_tReadPeriod마다 시작해 4개를 연달아 읽음 (명세 DV-04 v2.46)
 END_VAR
 
 VAR_OUTPUT
@@ -40,6 +41,7 @@ VAR
 	_stWork : ST_UpsRaw;
 	_nSampleSeq : UDINT;
 END_VAR]]></Declaration><Implementation><ST><![CDATA[]]></ST></Implementation><Method Name="M_Cycle" Id="{2ef678e4-14c1-48ed-a2ea-e27f658b3416}"><Declaration><![CDATA[METHOD M_Cycle]]></Declaration><Implementation><ST><![CDATA[_bReadDue := M_IsReadTime();
+IF _bReadDue THEN _bCycle:=TRUE; END_IF // 한 바퀴 시작 (명세 DV-04 v2.46: 주기 = 한 바퀴)
 IF NOT i_bEnable THEN
 	_bDiscardResponse:=_bDiscardResponse OR _fbJob.q_bBusy;
 	_bLaunch:=FALSE;
@@ -77,9 +79,9 @@ IF _fbJob.q_bDone THEN
 END_IF
 
 IF _fbJob.q_bDone AND _bDiscardResponse THEN
-	_bDiscardResponse:=FALSE; _nPoll:=0;
+	_bDiscardResponse:=FALSE; _nPoll:=0; _bCycle:=FALSE;
 ELSIF _fbJob.q_bDone AND NOT _bCurrentWrite THEN
-	IF _fbJob.q_bError THEN _nPoll:=0;
+	IF _fbJob.q_bError THEN _nPoll:=0; _bCycle:=FALSE; // 다음 주기에 처음부터
 	ELSE
 		CASE _nPoll OF
 			0: FOR _nCopy:=0 TO 34 DO _stWork.awInput[_nCopy]:=_fbJob.q_awData[_nCopy]; END_FOR
@@ -88,7 +90,7 @@ ELSIF _fbJob.q_bDone AND NOT _bCurrentWrite THEN
 			3: FOR _nCopy:=0 TO 16 DO _stWork.awParam[_nCopy+50]:=_fbJob.q_awData[_nCopy]; END_FOR
 		END_CASE
 		IF _nPoll=3 THEN
-			q_stRaw:=_stWork; _nSampleSeq:=F_UpsNextSeq(_nSampleSeq); M_MarkAlive(); _nPoll:=0;
+			q_stRaw:=_stWork; _nSampleSeq:=F_UpsNextSeq(_nSampleSeq); M_MarkAlive(); _nPoll:=0; _bCycle:=FALSE;
 		ELSE _nPoll:=_nPoll+1; END_IF
 	END_IF
 END_IF
@@ -102,7 +104,7 @@ IF NOT _fbJob.q_bBusy AND NOT _fbJob.q_bDone AND i_bEnable AND i_sIpAddr<>'' THE
 IF _bPendingWrite THEN
 	_nFunction:=6; _nAddress:=_nPendingAddress; _nQuantity:=1; _wValue:=_wPendingValue;
 	_bCurrentWrite:=TRUE; _bPendingWrite:=FALSE; _bLaunch:=TRUE;
-ELSIF _bReadDue THEN
+ELSIF _bCycle THEN // 한 바퀴 안에서는 앞 요청이 끝나면 바로 다음 요청 (쓰기가 있으면 쓰기 먼저)
 	_bCurrentWrite:=FALSE;
 
 	CASE _nPoll OF
@@ -114,7 +116,7 @@ ELSIF _bReadDue THEN
 	_bLaunch:=TRUE;
 	END_IF
 END_IF
-IF NOT i_bEnable THEN _nSampleSeq:=0; _nPoll:=0; _bLaunch:=FALSE; END_IF]]></ST></Implementation></Method><Property Name="UpsState" Id="{72b1bfe7-b4e7-4959-8881-4270baa537ff}"><Declaration><![CDATA[PROPERTY UpsState : ST_UpsState]]></Declaration><Get Name="Get" Id="{ae98f2b4-08a3-411e-ac9f-c92d3c9a8f28}"><Declaration><![CDATA[]]></Declaration><Implementation><ST><![CDATA[UpsState:=q_stState;]]></ST></Implementation></Get></Property><Method Name="M_QueueWrite" Id="{d3f32322-f621-4dbb-8180-ffb2012f4a14}"><Declaration><![CDATA[METHOD PRIVATE M_QueueWrite : BOOL
+IF NOT i_bEnable THEN _nSampleSeq:=0; _nPoll:=0; _bLaunch:=FALSE; _bCycle:=FALSE; END_IF]]></ST></Implementation></Method><Property Name="UpsState" Id="{72b1bfe7-b4e7-4959-8881-4270baa537ff}"><Declaration><![CDATA[PROPERTY UpsState : ST_UpsState]]></Declaration><Get Name="Get" Id="{ae98f2b4-08a3-411e-ac9f-c92d3c9a8f28}"><Declaration><![CDATA[]]></Declaration><Implementation><ST><![CDATA[UpsState:=q_stState;]]></ST></Implementation></Get></Property><Method Name="M_QueueWrite" Id="{d3f32322-f621-4dbb-8180-ffb2012f4a14}"><Declaration><![CDATA[METHOD PRIVATE M_QueueWrite : BOOL
 VAR_INPUT i_nAddress : WORD; i_wValue : WORD; END_VAR]]></Declaration><Implementation><ST><![CDATA[q_eRequestResult := E_UpsResult.Disabled;
 IF NOT GVL_PARAM.UPS_CONTROL_ENABLED OR NOT i_bWritePermit OR NOT i_bEnable THEN RETURN; END_IF
 IF i_bBlockStart THEN // 2026-11-17: 고장·e-stop 중 시작 명령·설정 쓰기는 받지 않음

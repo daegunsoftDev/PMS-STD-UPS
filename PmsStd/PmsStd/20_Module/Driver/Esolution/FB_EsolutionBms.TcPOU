@@ -32,6 +32,9 @@ VAR
 	_nPoll : UINT;
 	_nCopy : UINT;
 	_bReadDue : BOOL;
+	_bCycle : BOOL; // 2026-11-23 기본 한 바퀴(시스템·랙 아날로그·랙 상태 3개) 읽는 중 (명세 DV-04 v2.46)
+	_bDetailReq : BOOL; // 랙 상세 한 조각을 읽을 차례
+	_tonDetailRead : TON; // 랙 상세 읽기 간격
 END_VAR
 
 VAR_INPUT
@@ -40,6 +43,7 @@ VAR_INPUT
 	i_bReadDetails : BOOL := FALSE; // enable after unused module-slot response is confirmed
 	i_tHeartbeatTimeout : TIME := T#10S;
 	i_tDetailTimeout : TIME := T#60S;
+	i_tDetailPeriod : TIME := T#100MS; // 랙 상세 한 조각(125 레지스터) 읽는 간격. 기본 한 바퀴(i_tReadPeriod) 사이사이에 읽음 (명세 DV-04 v2.46)
 	i_stTime : ST_LocalTime; // PMS 현지 시각 (MAIN.fbClock). BMS 시각 동기용 (명세 WR-BAT-01 v2.35)
 	i_tTimeSync : TIME := T#1H; // BMS 시각 동기 주기 (BAT 질의 Q1: 1시간). T#0S = 끔
 END_VAR
@@ -100,6 +104,9 @@ END_IF]]></ST>
       <Declaration><![CDATA[METHOD M_Cycle]]></Declaration>
       <Implementation>
         <ST><![CDATA[_bReadDue := M_IsReadTime();
+IF _bReadDue THEN _bCycle:=TRUE; END_IF // 기본 한 바퀴 시작 (명세 DV-04 v2.46: 주기 = 한 바퀴)
+_tonDetailRead(IN:=i_bReadDetails AND NOT _tonDetailRead.Q, PT:=i_tDetailPeriod);
+IF _tonDetailRead.Q THEN _bDetailReq:=TRUE; END_IF
 IF NOT i_bEnable THEN
 	_bDiscardResponse:=_bDiscardResponse OR _fbJob.q_bBusy;
 	_bLaunch:=FALSE;
@@ -130,10 +137,10 @@ END_IF
 _bHeartbeatChanged:=FALSE;
 FOR _nRack:=1 TO 10 DO _abDetailUpdated[_nRack]:=FALSE; END_FOR
 IF _fbJob.q_bDone AND _bDiscardResponse THEN
-	_bDiscardResponse:=FALSE; _nPoll:=0;
+	_bDiscardResponse:=FALSE; _nPoll:=0; _bCycle:=FALSE; _bDetailReq:=FALSE;
 ELSIF _fbJob.q_bDone AND NOT _bCurrentWrite THEN
 	IF _fbJob.q_bError THEN
-		IF _nPoll=3 THEN _nDetailOffset:=0; END_IF
+		IF _nPoll=3 THEN _nDetailOffset:=0; _bDetailReq:=FALSE; ELSE _bCycle:=FALSE; END_IF // 다음 차례에 다시
 		_nPoll:=0;
 	ELSE
 		CASE _nPoll OF
@@ -159,7 +166,9 @@ ELSIF _fbJob.q_bDone AND NOT _bCurrentWrite THEN
 					IF _nDetailRack>=i_nRackCount THEN _nDetailRack:=1; ELSE _nDetailRack:=_nDetailRack+1; END_IF
 				ELSE _nDetailOffset:=_nDetailOffset+_nDetailChunk; END_IF
 		END_CASE
-		IF _nPoll=3 OR (_nPoll=2 AND NOT i_bReadDetails) THEN _nPoll:=0; ELSE _nPoll:=_nPoll+1; END_IF
+		IF _nPoll=2 THEN _nPoll:=0; _bCycle:=FALSE; // 기본 한 바퀴 끝
+		ELSIF _nPoll=3 THEN _nPoll:=0; _bDetailReq:=FALSE; // 랙 상세 한 조각 끝
+		ELSE _nPoll:=_nPoll+1; END_IF
 	END_IF
 END_IF
 M_UpdateComm();
@@ -251,7 +260,7 @@ IF _bPendingWrite THEN
 	_awValues:=_awPendingValues;
 	IF _nPendingQty>1 THEN _nFunction:=16; ELSE _nFunction:=6; END_IF
 	_bCurrentWrite:=TRUE; _bPendingWrite:=FALSE; _bLaunch:=TRUE;
-ELSIF _bReadDue THEN
+ELSIF _bCycle THEN // 기본 한 바퀴: 앞 요청이 끝나면 바로 다음 (명세 DV-04 v2.46)
 	_bCurrentWrite:=FALSE;
 
 	_nFunction:=4;
@@ -259,18 +268,19 @@ ELSIF _bReadDue THEN
 		0: _nAddress:=0; _nQuantity:=27; // 맵 v1.4: 30001~30027
 		1: _nAddress:=50; _nQuantity:=40;
 		2: _nAddress:=90; _nQuantity:=90;
-		3:
-			IF NOT i_bReadDetails THEN _nPoll:=0; _nAddress:=0; _nQuantity:=27;
-			ELSE
-				_nDetailChunk:=MIN(125,406-_nDetailOffset);
-				_nAddress:=UINT_TO_WORD(500+500*(_nDetailRack-1)+_nDetailOffset);
-				_nQuantity:=UINT_TO_WORD(_nDetailChunk);
-			END_IF
 	END_CASE
+	_bLaunch:=TRUE;
+ELSIF _bDetailReq AND i_bReadDetails THEN // 랙 상세 한 조각 (기본 한 바퀴 사이사이, i_tDetailPeriod마다)
+	_bCurrentWrite:=FALSE;
+	_nFunction:=4;
+	_nPoll:=3;
+	_nDetailChunk:=MIN(125,406-_nDetailOffset);
+	_nAddress:=UINT_TO_WORD(500+500*(_nDetailRack-1)+_nDetailOffset);
+	_nQuantity:=UINT_TO_WORD(_nDetailChunk);
 	_bLaunch:=TRUE;
 	END_IF
 END_IF
-IF NOT i_bEnable THEN _nSampleSeq:=0; _nPoll:=0; _nDetailOffset:=0; _bLaunch:=FALSE; END_IF]]></ST>
+IF NOT i_bEnable THEN _nSampleSeq:=0; _nPoll:=0; _nDetailOffset:=0; _bLaunch:=FALSE; _bCycle:=FALSE; _bDetailReq:=FALSE; END_IF]]></ST>
       </Implementation>
     </Method>
     <Method Name="M_QueueWrite" Id="{5424d895-20c6-40c8-8757-6010d2507221}">
