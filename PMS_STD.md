@@ -490,7 +490,7 @@ FB_Distributor  (그룹마다, P·Q 각각. M_DistPath는 두 경로가 같은 �
 | `FB_SettingGuard` | 운전 중 바꾸는 설정 값을 지킨다: 코어 설정(`g_stCmdFilter`·`g_stManualCmdSet`·`g_stSeqSet`), 등록·출력·규칙 설정의 번호 범위(`g_astOutputCfg`, `g_astRuleCfg.nTarget`, 등록의 `nGroup`·`nTarget`, 그룹이 2개 이상일 때 `nGroup` 0), 모듈 설정(각 모듈 `M_CheckSet`). 잘못된 값이면 받지 않고 마지막 정상값을 `GVL_PERSIST`에 다시 써 되돌린다 (등록·모듈 설정은 묶음 통째, 되돌린 스캔은 MAIN이 모듈에 다시 넘김). 시작부터 잘못이면 `q_bNoGood` → 설정 오류. 모듈 설정 묶음 크기 초과(`q_bModuleSetTooBig`)도 여기서 낸다 |
 | `FB_OutputDiag` | 그룹마다 출력을 막은 단계·주체·이유(`ST_OutputDiag`)와 P 추적표(`ST_PTrace`, `ST_TraceStep`)를 낸다 |
 | `E_DiagStage` `E_TraceStep` | 막은 단계(Ramp, PccLimit, DeviceLimit, UnitLimit 등), 추적표 줄 종류 |
-| `FB_EventLog` | 기록하는 유일한 곳. 결과가 바뀔 때만 TwinCAT 이벤트 로거에 남긴다. 본문은 기록 구간별 액션(`A_LogSystem` `A_LogRedundancy` `A_LogProtection` `A_LogDeviceFail` `A_LogSource` `A_LogRefused` `A_LogOutput`)을 차례로 부른다 |
+| `FB_EventLog` | 기록하는 유일한 곳 (예외: UPS 사고·고장 단계 기록은 `FB_UpsSafetyLog`, 클래스 `PmsUps`, PMS 로그에만 남기고 EMS로는 안 보냄. 명세 SQ-01 v2.21). 결과가 바뀔 때만 TwinCAT 이벤트 로거에 남긴다. 본문은 기록 구간별 액션(`A_LogSystem` `A_LogRedundancy` `A_LogProtection` `A_LogDeviceFail` `A_LogSource` `A_LogRefused` `A_LogOutput`)을 차례로 부른다 |
 | `FB_LogAlarm` `FB_LogMsg` | 알람(발생·해소 한 쌍), 메시지(한 번) |
 | `FB_AliveRecorder` | 마지막 동작 시각을 1 s마다 갱신, 시작할 때 "직전 동작 시각·꺼져 있던 시간"을 `FB_EventLog`에 알린다 (`q_bStartEvent`). 기록은 `FB_EventLog`가 한다 |
 | `F_Txt…` (11개) | 로그·화면용 문구 만들기 (조치, 명령, 코어 이유, 축소 이유, 모드, 거부 이유, 시퀀스, 단계, "앞말 + 번호") |
@@ -675,7 +675,7 @@ FB_EventLog → TwinCAT 이벤트 로거 ─(리스너 콜백)→ FB_MqttLoggerL
 | TimeStamp | 이벤트가 생긴 시각(로거 기록 시각)을 현지 시각으로. 보낸 시각이 아니다. 현지 − UTC는 `FB_MqttMain.A_MakeTimeStamp`가 15분 단위로 구함 |
 | Contents | 이벤트 로거 문구 그대로 (인자 채움). 알람 해소는 앞에 `[해소] `. 100자를 넘으면 99자 + `…` (`fbLogger.q_nTruncated`). 문구 길이 규칙은 7장 "로그 문구 길이" |
 | 요건 | **제어기 TwinCAT 런타임 3.1.4024.17 이상** (`FB_ListenerBase2`, `Tc3_EventLogger` 3.1.27 이상). 빌드 PC의 라이브러리 버전이 아니라 제어기 런타임 버전이 기준이다. 낮으면 `fbLogger._hrSubscribe = 16#98110701`(서비스 미지원), `q_bSubscribed` FALSE, `q_nReceived` 0 → 런타임을 올린다 |
-| 받는 이벤트 | `PmsSystem`·`PmsProt`·`PmsOutput`·`PmsSeq` 클래스의 메시지·알람 발생·알람 해소. TwinCAT 시스템 이벤트는 안 받음. 구독은 클래스 단위(`TC_EVENT_CLASSES`)라 클래스 안 이벤트를 추가·삭제·이름 변경해도 리스너는 고치지 않는다. **새 이벤트 클래스를 만들면** `FB_MqttLoggerListener.M_Cycle` 필터에 한 줄 추가 |
+| 받는 이벤트 | `PmsSystem`·`PmsProt`·`PmsOutput`·`PmsSeq` 클래스의 메시지·알람 발생·알람 해소. TwinCAT 시스템 이벤트는 안 받음. 구독은 클래스 단위(`TC_EVENT_CLASSES`)라 클래스 안 이벤트를 추가·삭제·이름 변경해도 리스너는 고치지 않는다. **새 이벤트 클래스를 만들면** `FB_MqttLoggerListener.M_Cycle` 필터에 한 줄 추가. 단 `PmsUps`(UPS 사고·고장)는 일부러 넣지 않는다 (명세 SQ-01 v2.21: PMS 로그에만) |
 | 큐 | `GVL_MQTT.LOGGER_QUEUE`(64)칸. 한 스캔에 생길 수 있는 로그 수보다 커야 한다 (`PRG_TestLogger.bSendAll`은 스캔마다 32건씩). 브로커마다 다음 번호(`FB_MqttMain.anLoggerNext`)를 따로 가져 접속이 끊긴 동안 쌓인 것을 이어서 보냄. 기동 직후 접속 지연(10 s) 동안의 로그도 큐에 남음. 64건보다 밀리면 건너뛰고 셈(`q_nLost`) |
 | 이중화 | 발행은 Active PLC만 한다 (`i_bPublish = GVL_IF.g_bRedActive`, 장치 토픽과 같음). 대기 PLC의 로그는 큐에 쌓지 않고 버린다 (`A_PublishLogger`): Active가 된 뒤 옛 로그를 한꺼번에 보내거나 두 PLC가 같은 로그를 이중으로 보내지 않게. 그래서 대기 PLC에서만 생긴 로그(예: Active를 내려놓은 뒤의 로그)는 EMS로 가지 않는다. 리스너와 시험 프로그램은 두 PLC 모두에서 돈다 |
 | 문구 실패 | 5 s 안에 문구를 못 받으면 "로그 문구를 가져오지 못함: 이벤트 ID n" (`q_nTextError`) |

@@ -3,7 +3,7 @@
 {attribute 'pack_mode' := '1'}
 TYPE ST_UpsPublishData :
 STRUCT
- Header : ST_MqttHeader; // MQTT 공통 헤더
- Devices : ARRAY[0..GVL_PARAM.UPS_COUNT-1] OF ST_UpsPublish_V1; // UPS별 데이터
+	Header : ST_MqttHeader; // MQTT 공통 헤더
+	Devices : ARRAY[0..GVL_PARAM.UPS_COUNT-1] OF ST_UpsPublish_V1; // UPS별 데이터
 END_STRUCT
 END_TYPE]]></Declaration></DUT></TcPlcObject>

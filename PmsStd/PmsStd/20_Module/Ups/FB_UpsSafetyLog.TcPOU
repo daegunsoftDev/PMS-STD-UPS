@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_UpsSafetyLog" Id="{7b169962-59f5-44fd-857d-81d7baceaafc}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_UpsSafetyLog		// UPS 사고·고장 단계 기록: FB_UpsSafetyStage 결과를 PMS 이벤트 로그에 남김 (EMS로는 안 보냄)
+(* 사고·고장 단계·원인 기록 (④보호 표시 / 장치: UPS·BAT). 2026-11-18.
+   기반: 예전 작업본 pms-standard-main FB_UpsSafetyLog (2026-11-09, 명세 v2.0). 저장소 밖 C:\gil\UPS_보관\pms-standard-main
+   변경: UPSstd로 옮김. 기록은 PMS 이벤트 로그(TwinCAT 이벤트 로거, XAE Error List)에만. 이벤트 클래스 PmsUps는
+     로거 리스너(FB_MqttLoggerListener)가 받지 않아 EMS(pms_log)로 가지 않는다 (명세 SQ-01 v2.21).
+     시험용 출력 q_bSettled 등과 안정 시간 입력 i_tSettle을 더함.
+   변경: 2026-11-19 대응 동작(FB_UpsSafetyResponse) 기록 추가: 처음 보낸 명령, 완료, 10초 오류 (명세 SQ-01·SQ-05 v2.22)
+   변경: 2026-11-23 확인 대기(AckPending)·Fault 확인(FaultAck) 기록 없앰. PMS 안에서 Fault를 붙잡지 않음 (명세 SQ-01 v2.38)
+   부호·단위: 해당 없음. 명세: C:\gil\UPS\명세작업\UPS_명세서.md SQ-01 "기록"
+   - 원인 알람(CauseActive): 원인 비트마다 발생·해소 1회 ("UPS n 사고·고장 k단계: 원인"). 심각도 1~3단계 Warning, 4~5 Error, 6 Critical
+   - 단계 바뀜(StageChange): 대표 단계가 바뀔 때마다 메시지 1회
+   - 통신장애(CommLost): 한 번이라도 통신이 됐던 장비가 끊겼을 때만 알람 (설치 안 된 장비는 기록 안 함)
+   - 대응 명령(RespCmd): 동작을 처음 보낼 때 1번. 2초마다 다시 보내는 것은 남기지 않음 (보낸 횟수 0 → 1 이상)
+   - 대응 완료(RespDone): 동작이 될 때 1번 (보낸 횟수, 보내기 전에 이미 그 상태였으면 그렇게)
+   - 대응 오류(RespFail): 10초 넘게 안 된 동작마다 알람. 되거나 필요 없어지면 해소
+   - 바이패스 절체 안 함(BypassBlocked): 바이패스 이상이라 절체를 보내지 않는 동안 알람 (명세 SQ-05 v2.31, 2026-11-20)
+   - 켜진 뒤 i_tSettle 동안은 기록하지 않음 (부팅 직후 통신이 붙기 전 값으로 기록하지 않기 위해)
+   판정은 하지 않는다. 원인 비트 순서·단계는 FB_UpsSafetyStage.CAUSE_STAGE와 같아야 한다 *)
+VAR_INPUT
+	i_nUps			: UINT;					// UPS 번호 (1~)
+	i_nStage		: UINT;					// FB_UpsSafetyStage.q_nStage
+	i_nActiveCause	: UDINT;				// FB_UpsSafetyStage.q_nActiveCause
+	i_bUpsCommFault	: BOOL;					// FB_UpsSafetyStage.q_bUpsCommFault
+	i_bBatCommFault	: BOOL;					// FB_UpsSafetyStage.q_bBatCommFault
+	i_wRespNeeded	: WORD;					// FB_UpsSafetyResponse.q_wNeeded (지금 필요한 동작, 비트 0~5)
+	i_wRespDone		: WORD;					// FB_UpsSafetyResponse.q_wDone
+	i_wRespFailed	: WORD;					// FB_UpsSafetyResponse.q_wFailed (10초 넘게 안 된 동작)
+	i_anRespTry		: ARRAY[0..5] OF UINT;	// FB_UpsSafetyResponse.q_anTry (동작별 보낸 횟수)
+	i_bBypassBlocked : BOOL;				// FB_UpsSafetyResponse.q_bBypassBlocked (v2.31)
+	i_tSettle		: TIME := T#15S;		// 켜진 뒤 기록하지 않는 시간
+END_VAR
+VAR_OUTPUT
+	q_bSettled		: BOOL;					// 기록 시작함 (i_tSettle 지남)
+	q_nRaised		: UDINT;				// 원인 알람이 발생 중인 원인 비트
+	q_bUpsCommRaised : BOOL;				// UPS 통신장애 알람 발생 중
+	q_bBatCommRaised : BOOL;				// BMS 통신장애 알람 발생 중
+	q_nStageMsg		: UDINT;				// 단계 바뀜 메시지 보낸 수
+	q_nRespCmdMsg	: UDINT;				// 대응 명령 메시지 보낸 수
+	q_nRespDoneMsg	: UDINT;				// 대응 완료 메시지 보낸 수
+	q_wRespFailRaised : WORD;				// 대응 오류 알람이 발생 중인 동작 비트
+	q_bBypassBlockedRaised : BOOL;			// 바이패스 절체 안 함 알람 발생 중
+END_VAR
+VAR
+	_tonSettle		: TON;
+	_afbCause		: ARRAY[0..12] OF FB_LogAlarm;
+	_fbUpsComm		: FB_LogAlarm;
+	_fbBatComm		: FB_LogAlarm;
+	_fbStage		: FB_LogMsg;
+	_bUpsEverOk		: BOOL;
+	_bBatEverOk		: BOOL;
+	_nLastStage		: UINT;
+	_asArg			: ARRAY[1..6] OF WSTRING(63);
+	_stEntry		: TcEventEntry;
+	_i				: INT;
+	_bActive		: BOOL;
+	_afbRespFail	: ARRAY[0..5] OF FB_LogAlarm;
+	_fbRespCmd		: FB_LogMsg;
+	_fbRespDone		: FB_LogMsg;
+	_fbBypassBlocked : FB_LogAlarm;
+	_wSent			: WORD;					// 한 번이라도 보낸 동작 (보낸 횟수 > 0)
+	_wSentLast		: WORD;
+	_wDone			: WORD;					// 필요하고 된 동작
+	_wDoneLast		: WORD;
+	_wBit			: WORD;
+END_VAR
+VAR CONSTANT
+	CAUSE_STAGE		: ARRAY[0..12] OF UINT := [1, 1, 2, 3, 3, 3, 3, 3, 4, 4, 5, 5, 6];	// FB_UpsSafetyStage와 같음
+	CAUSE_NAME		: ARRAY[0..12] OF WSTRING(31) := [
+		"SPD", "UPS 경고장", "BMS Minor", "BMS Major", "입력·정류부 중고장", "출력 중고장", "인버터 중고장",
+		"RCD 1단계", "배터리 컨버터 중고장", "RCD 2단계", "BMS Level 3", "화재", "ESD"];
+	(* 대응 동작 이름 = FB_UpsSafetyResponse 동작 번호 순서 (명세 SQ-05) *)
+	RESP_NAME		: ARRAY[0..5] OF WSTRING(39) := [
+		"충전 컨택터 열기(BMS 40014=0)", "BMS 컨택터 전부 열기(40013~15=0)", "바이패스 절체(H109)",
+		"BBC 정지(H107)", "정류부 정지(H103)", "인버터 정지(H105)"];
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF NOT i_bUpsCommFault THEN _bUpsEverOk := TRUE; END_IF
+IF NOT i_bBatCommFault THEN _bBatEverOk := TRUE; END_IF
+_tonSettle(IN := TRUE, PT := i_tSettle);
+q_bSettled := _tonSettle.Q;
+_wSent := 0;
+FOR _i := 0 TO 5 DO
+	IF i_anRespTry[_i] > 0 THEN _wSent := _wSent OR SHL(WORD#1, _i); END_IF
+END_FOR
+_wDone := i_wRespDone AND i_wRespNeeded;
+IF NOT q_bSettled THEN
+	_nLastStage := i_nStage;
+	_wSentLast := _wSent;
+	_wDoneLast := _wDone;
+	RETURN;
+END_IF
+
+// 1) 원인 알람 (지금 실제로 걸린 원인)
+q_nRaised := 0;
+FOR _i := 0 TO 12 DO
+	_bActive := (i_nActiveCause AND SHL(UDINT#1, _i)) <> 0;
+	IF _bActive <> _afbCause[_i].q_bRaised THEN
+		_asArg[1] := TO_WSTRING(i_nUps);
+		_asArg[2] := TO_WSTRING(CAUSE_STAGE[_i]);
+		_asArg[3] := CAUSE_NAME[_i];
+	END_IF
+	_stEntry := TC_EVENTS.PmsUps.CauseActive;
+	IF CAUSE_STAGE[_i] >= 6 THEN
+		_stEntry.eSeverity := TcEventSeverity.Critical;
+	ELSIF CAUSE_STAGE[_i] >= 4 THEN
+		_stEntry.eSeverity := TcEventSeverity.Error;
+	ELSE
+		_stEntry.eSeverity := TcEventSeverity.Warning;
+	END_IF
+	_afbCause[_i](i_stEntry := _stEntry, i_bActive := _bActive, i_nArgs := 3, i_asArg := _asArg);
+	IF _afbCause[_i].q_bRaised THEN
+		q_nRaised := q_nRaised OR SHL(UDINT#1, _i);
+	END_IF
+END_FOR
+
+// 2) 대표 단계 바뀜
+_fbStage(i_stEntry := TC_EVENTS.PmsUps.StageChange);
+IF i_nStage <> _nLastStage THEN
+	_asArg[1] := TO_WSTRING(i_nUps);
+	_asArg[2] := TO_WSTRING(_nLastStage);
+	_asArg[3] := TO_WSTRING(i_nStage);
+	_fbStage.M_SendEvent(i_nArgs := 3, i_asArg := _asArg);
+	_nLastStage := i_nStage;
+	q_nStageMsg := q_nStageMsg + 1;
+END_IF
+
+// 3) 통신장애 (한 번이라도 됐던 장비만)
+_bActive := i_bUpsCommFault AND _bUpsEverOk;
+IF _bActive <> _fbUpsComm.q_bRaised THEN
+	_asArg[1] := TO_WSTRING(i_nUps);
+	_asArg[2] := "UPS";
+END_IF
+_fbUpsComm(i_stEntry := TC_EVENTS.PmsUps.CommLost, i_bActive := _bActive, i_nArgs := 2, i_asArg := _asArg);
+q_bUpsCommRaised := _fbUpsComm.q_bRaised;
+_bActive := i_bBatCommFault AND _bBatEverOk;
+IF _bActive <> _fbBatComm.q_bRaised THEN
+	_asArg[1] := TO_WSTRING(i_nUps);
+	_asArg[2] := "BMS";
+END_IF
+_fbBatComm(i_stEntry := TC_EVENTS.PmsUps.CommLost, i_bActive := _bActive, i_nArgs := 2, i_asArg := _asArg);
+q_bBatCommRaised := _fbBatComm.q_bRaised;
+
+// 4) 대응 동작 (명세 SQ-05 기록, v2.22): 처음 보낸 명령, 완료, 10초 오류
+_fbRespCmd(i_stEntry := TC_EVENTS.PmsUps.RespCmd);
+_fbRespDone(i_stEntry := TC_EVENTS.PmsUps.RespDone);
+q_wRespFailRaised := 0;
+FOR _i := 0 TO 5 DO
+	_wBit := SHL(WORD#1, _i);
+	IF (_wSent AND _wBit) <> 0 AND (_wSentLast AND _wBit) = 0 THEN
+		_asArg[1] := TO_WSTRING(i_nUps);
+		_asArg[2] := RESP_NAME[_i];
+		_fbRespCmd.M_SendEvent(i_nArgs := 2, i_asArg := _asArg);
+		q_nRespCmdMsg := q_nRespCmdMsg + 1;
+	END_IF
+	IF (_wDone AND _wBit) <> 0 AND (_wDoneLast AND _wBit) = 0 THEN
+		_asArg[1] := TO_WSTRING(i_nUps);
+		_asArg[2] := RESP_NAME[_i];
+		IF i_anRespTry[_i] = 0 THEN
+			_asArg[3] := "이미 그 상태였음";
+		ELSE
+			_asArg[3] := WCONCAT("보낸 횟수 ", TO_WSTRING(i_anRespTry[_i]));
+		END_IF
+		_fbRespDone.M_SendEvent(i_nArgs := 3, i_asArg := _asArg);
+		q_nRespDoneMsg := q_nRespDoneMsg + 1;
+	END_IF
+	_bActive := (i_wRespFailed AND _wBit) <> 0;
+	IF _bActive <> _afbRespFail[_i].q_bRaised THEN
+		_asArg[1] := TO_WSTRING(i_nUps);
+		_asArg[2] := RESP_NAME[_i];
+	END_IF
+	_afbRespFail[_i](i_stEntry := TC_EVENTS.PmsUps.RespFail, i_bActive := _bActive, i_nArgs := 2, i_asArg := _asArg);
+	IF _afbRespFail[_i].q_bRaised THEN
+		q_wRespFailRaised := q_wRespFailRaised OR _wBit;
+	END_IF
+END_FOR
+// 바이패스 이상이라 절체 안 함 (v2.31)
+IF i_bBypassBlocked <> _fbBypassBlocked.q_bRaised THEN
+	_asArg[1] := TO_WSTRING(i_nUps);
+END_IF
+_fbBypassBlocked(i_stEntry := TC_EVENTS.PmsUps.BypassBlocked, i_bActive := i_bBypassBlocked, i_nArgs := 1, i_asArg := _asArg);
+q_bBypassBlockedRaised := _fbBypassBlocked.q_bRaised;
+_wSentLast := _wSent;
+_wDoneLast := _wDone;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

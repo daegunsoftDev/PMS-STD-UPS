@@ -1,4 +1,13 @@
 ﻿# C:\gil\UPS 작업 지침
 
-- **UPSstd 우선 (2026-11-10, 사용자 결정):** `C:\gil\UPS\UPSstd\` 폴더의 md 파일(PMS_STD.md, README_UPS_CHARGE.md, README_UPS_DRIVER.md, README_UPS_TEST_CONFIG.md, UPS_MQTT_INTERFACE.md)이 이 저장소의 다른 모든 md(명세서, 정보·회의록, pms-standard-main의 같은 이름 문서)보다 **항상 우선**한다. 내용이 다르면 UPSstd 쪽을 따른다.
-- 대상 PLC 프로젝트는 `UPSstd\PmsStd.sln` (새 표준 STD). `pms-standard-main\`은 이전 작업본이다.
+- **문서 우선순위 (2026-11-16, 사용자 결정. 2026-11-10 "UPSstd 우선"을 대신함):**
+  1. 명세서(`명세작업\UPS_명세서.md`)가 가장 위다. 명세와 코드가 다르면 명세를 따른다.
+  2. 코드 문서 중에서는 `UPSstd\PMS_STD.md`가 **항상** 우선한다. 실제 자동화에는 PMS_STD.md만 남기 때문이다.
+  3. 그다음이 UPSstd의 나머지 md(README_UPS_CHARGE.md, README_UPS_DRIVER.md, README_UPS_TEST_CONFIG.md, UPS_MQTT_INTERFACE.md)다.
+  4. 그 밖의 md(정보·회의록)는 참고만 한다.
+- **명세 기반 자동화 (2026-11-16, 사용자 결정):** 사용자가 자료를 모두 주면 Claude가 명세 md를 만들고, 질문을 모두 마친 뒤 자동화를 시작한다.
+  - 자동화가 시작되면 **명세 변경 = 수정 지시**다. "수정해"를 따로 기다리지 않는다.
+  - 맵 변경과 사고·고장 시퀀스·보호 변경도 Claude가 코드·검증까지 하고 **결과만** 보고한다.
+  - 시험 실행(시험 PLC, ModSim으로 알람을 넣어 동작 확인)은 사람이 한다. Claude는 빌드까지 확인한다.
+  - 미결 항목(O-xx)은 답이 올 때까지 자동화하지 않는다. push는 요청할 때만 한다.
+- 대상 PLC 프로젝트는 `UPSstd\PmsStd.sln` (새 표준 STD). 이전 작업본 `pms-standard-main`은 2026-11-18 저장소 밖 `C:\gil\UPS_보관\pms-standard-main`으로 옮겼다 (git 이력에 남음, 시험 PLC I/O 구성은 커밋 326ed22).

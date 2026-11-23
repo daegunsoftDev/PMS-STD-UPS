@@ -6,8 +6,10 @@
    5 시스템(랙 전체 40013) 연결   6 시스템 차단
    7 충전 컨택터(40014) 닫기      8 충전 컨택터 열기
    9 방전 컨택터(40015) 닫기      10 방전 컨택터 열기
+   3 비상정지 (40012 Emergency Shutdown = 1). 2026-11-23 명세 v2.33: 코어(F_BatCmdAllowed)가 지령원 EStop을 거절해 이쪽으로 옮김
+   4 초기화 (40031 Reset System = 1, 비상차단 해제). 2026-11-23 명세 v2.34 (O-19 A)
    - 장비 쓰기는 하지 않는다. q_bWriteReq·q_eControl·q_bOn을 MAIN이 보고 드라이버 M_SetControl을 부르고 결과를 돌려준다
-   - 5~10 밖이면 BadRequest. 드라이버가 바쁘면(Busy) WRITE_TIMEOUT 동안 다시 시도. 그 밖의 거절(쓰기 막힘, 통신 불가 등)은 바로 그 결과로 끝
+   - 3~10 밖이면 BadRequest. 드라이버가 바쁘면(Busy) WRITE_TIMEOUT 동안 다시 시도. 그 밖의 거절(쓰기 막힘, 통신 불가 등)은 바로 그 결과로 끝
    - 코어 순서(유닛 정지 확인)는 거치지 않는다 (랙 개별 11·12와 같음). 일괄 투입·개방은 1·2 (코어 경로) *)
 VAR_INPUT
 	i_stCmd			: ST_BatCtlCmd;		// EMS 명령 (번호가 바뀌면 새 명령)
@@ -54,6 +56,8 @@ IF i_stCmd.nSeq <> q_nLastSeq AND i_stCmd.nSeq <> 0 THEN
 	_tonWait(IN := FALSE);
 	q_eResult := E_UpsResult.None;	// 처리 중
 	CASE i_stCmd.nType OF
+		3:		q_eControl := E_EsolutionControl.EmergencyShutdown;
+		4:		q_eControl := E_EsolutionControl.ResetSystem;
 		5, 6:	q_eControl := E_EsolutionControl.SystemContactor;
 		7, 8:	q_eControl := E_EsolutionControl.ChargeContactor;
 		9, 10:	q_eControl := E_EsolutionControl.DischargeContactor;
@@ -61,7 +65,7 @@ IF i_stCmd.nSeq <> q_nLastSeq AND i_stCmd.nSeq <> 0 THEN
 		q_eResult := E_UpsResult.BadRequest;
 	END_CASE
 	IF q_eResult = E_UpsResult.None THEN
-		q_bOn := (i_stCmd.nType MOD 2) = 1;	// 5·7·9 = 닫기
+		q_bOn := (i_stCmd.nType MOD 2) = 1 OR i_stCmd.nType = 4;	// 3 비상정지·4 초기화 = 켜기(1), 5·7·9 = 닫기
 		q_bWriteReq := TRUE;
 	END_IF
 END_IF

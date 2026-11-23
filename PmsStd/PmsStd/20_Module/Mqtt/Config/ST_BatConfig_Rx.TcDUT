@@ -4,9 +4,9 @@
     <Declaration><![CDATA[{attribute 'pack_mode' := '1'}
 TYPE ST_BatConfig_Rx :
 STRUCT
- DeviceId : UDINT;
- SocMin : REAL;
- SocMax : REAL;
+	DeviceId : UDINT;
+	SocMin : REAL;
+	SocMax : REAL;
 END_STRUCT
 END_TYPE]]></Declaration>
   </DUT>

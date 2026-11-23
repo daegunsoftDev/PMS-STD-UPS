@@ -30,6 +30,10 @@
 	UPS_CFG_MAX_MINUTES : UDINT := 60; // EMS 주기적 방전 시간 상한 (분)
 	UPS_CFG_MAX_SECONDS : UDINT := 60; // EMS 펄스 시간 상한 (초)
 	UPS_CFG_MAX_CYCLES : UDINT := 1000; // EMS 펄스 횟수 상한
+	UPS_CFG_MAX_VOLTAGE_V : REAL := 1000.0; // EMS 간헐충전 시작·종료 전압 상한 (V). 명세 v2.14
+	UPS_CFG_SOC_SCALE : REAL := 1.0; // 간헐충전 SOC 기준(H57 = 2)일 때 H58·H59 배율. 1 = 1 % 단위 (미결 O-14, 0.1 %면 10)
+	UPS_CFG_MAX_TRICKLE_MINUTES : UDINT := 1440; // H60 간헐충전 종료시간 상한 (분)
+	UPS_CFG_MAX_DAYS : UDINT := 365; // H61 간헐충전 재시작 기간 상한 (일)
 	UPS_COUNT		: UINT := 1;		// UPS 대수 (현장 5: 1대). PCS와 별개이며 실제 드라이버는 미연결
 	RACKS_PER_BMS	: UINT := 8;		// 배터리 시스템 한 대당 랙 수 (현장 5: 8, 드라이버 최대 10)
 	MODULES_PER_RACK : UINT := 9;		// 랙 한 개당 배터리 모듈 수 (현장 5: 9, 맵 최대 17)

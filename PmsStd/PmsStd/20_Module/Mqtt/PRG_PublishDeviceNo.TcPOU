@@ -25,21 +25,21 @@ FOR i := 0 TO GVL_PARAM.RACK_COUNT - 1 DO
 	g_stRackPublish.Devices[i].ModuleCount := UINT_TO_UDINT(GVL_PARAM.MODULES_PER_RACK);
 END_FOR
 FOR i:=0 TO GVL_PARAM.UPS_COUNT-1 DO
- g_stUpsPublish.Devices[i].DeviceIndex:=UINT_TO_UDINT(i+1); // UPS는 1부터
- g_astUpsConfig[i].DeviceId:=UINT_TO_UDINT(i+1);
- // Scaffold is not a measurement mapping: mark unavailable, and keep publish gate FALSE.
- g_stUpsPublish.Devices[i].Status:=1;
+	g_stUpsPublish.Devices[i].DeviceIndex:=UINT_TO_UDINT(i+1); // UPS는 1부터
+	g_astUpsConfig[i].DeviceId:=UINT_TO_UDINT(i+1);
+	// Scaffold is not a measurement mapping: mark unavailable, and keep publish gate FALSE.
+	g_stUpsPublish.Devices[i].Status:=1;
 END_FOR
 FOR i:=0 TO GVL_PARAM.BMS_COUNT-1 DO
- g_stBatPublish.Devices[i].Status:=1;
+	g_stBatPublish.Devices[i].Status:=1;
 END_FOR
 FOR i:=0 TO GVL_PARAM.RACK_COUNT-1 DO
- g_stRackPublish.Devices[i].Status:=1;
+	g_stRackPublish.Devices[i].Status:=1;
 END_FOR
 FOR i:=0 TO GVL_PARAM.BAT_MODULE_COUNT-1 DO
- g_stModulePublish.Devices[i].BatIndex:=UINT_TO_UDINT(i / (GVL_PARAM.RACKS_PER_BMS * GVL_PARAM.MODULES_PER_RACK) + 1);
- g_stModulePublish.Devices[i].RackIndex:=UINT_TO_UDINT((i / GVL_PARAM.MODULES_PER_RACK) MOD GVL_PARAM.RACKS_PER_BMS + 1);
- g_stModulePublish.Devices[i].DeviceIndex:=UINT_TO_UDINT(i MOD GVL_PARAM.MODULES_PER_RACK + 1);
+	g_stModulePublish.Devices[i].BatIndex:=UINT_TO_UDINT(i / (GVL_PARAM.RACKS_PER_BMS * GVL_PARAM.MODULES_PER_RACK) + 1);
+	g_stModulePublish.Devices[i].RackIndex:=UINT_TO_UDINT((i / GVL_PARAM.MODULES_PER_RACK) MOD GVL_PARAM.RACKS_PER_BMS + 1);
+	g_stModulePublish.Devices[i].DeviceIndex:=UINT_TO_UDINT(i MOD GVL_PARAM.MODULES_PER_RACK + 1);
 END_FOR
 // 값을 채우는 매핑이 없는 토픽도 번호는 1부터 [1부터 2026-11-10]
 g_stPmsPublish.Devices[0].DeviceIndex := 1;

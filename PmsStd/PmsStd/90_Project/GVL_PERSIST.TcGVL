@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.15">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <GVL Name="GVL_PERSIST" Id="{e8beea41-63c5-4c92-9790-3ba62a083fcb}">
     <Declaration><![CDATA[VAR_GLOBAL PERSISTENT
 	(* ================================================================
@@ -21,11 +21,11 @@
 	g_astPermitReg	: ARRAY[1..GVL_PARAM.PERMIT_COUNT] OF ST_ModuleReg;
 	g_astCompReg	: ARRAY[1..GVL_PARAM.COMP_COUNT] OF ST_ModuleReg;
 	g_astRuleCfg	: ARRAY[1..GVL_PARAM.RULE_COUNT] OF ST_RuleCfg := [	// 보호 규칙 (칸 = GVL_SITE.g_aipRule·g_aipResp). nTarget 0 = 범위 안 대상 전부. stProt 조치는 표준 대응(대응 칸에 g_fbProtRespStd)이 씀. 대응 칸이 비면 조치 없음 ([결함 8 수정 2026-11-03: 주석 고침. 원래 '표준 대응(대응 칸이 빈 칸)이 씀'])
-						(stProt := (ePcsAction := E_PcsAction.Stop), eScope := E_ProtScope.Unit),		// 1 PCS 고장 → 그 유닛 정지
-						(stProt := (ePcsAction := E_PcsAction.Standby), eScope := E_ProtScope.Unit),	// 2 PCS 통신 끊김 → 그 유닛 대기
-						(stProt := (ePcsAction := E_PcsAction.Stop, eBatAction := E_BatAction.Stop), eScope := E_ProtScope.Bms),	// 3 BMS 고장 → 그 BMS 정지 + 같은 배터리 그룹 유닛 정지
-						(stProt := (ePcsAction := E_PcsAction.Standby), eScope := E_ProtScope.Bms),		// 4 BMS 통신 끊김 → 같은 배터리 그룹 유닛 대기
-						(stProt := (ePcsAction := E_PcsAction.Standby), eScope := E_ProtScope.Group),	// 5 접속점 계측 무효 → 그룹 대기
+						(stProt := (ePcsAction := E_PcsAction.None), eScope := E_ProtScope.Unit),		// 1 PCS 고장 → 알람만 (UPS 현장, 명세 SQ-05 v2.36. ESS 원래: 그 유닛 정지)
+						(stProt := (ePcsAction := E_PcsAction.None), eScope := E_ProtScope.Unit),		// 2 PCS 통신 끊김 → 알람만 (ESS 원래: 그 유닛 대기)
+						(stProt := (ePcsAction := E_PcsAction.None, eBatAction := E_BatAction.None), eScope := E_ProtScope.Bms),	// 3 BMS 고장 → 알람만 (v2.36: BMS 컨택터 전부 열기를 하지 않음. 배터리 차단은 SQ-05만. ESS 원래: BMS 정지 + 유닛 정지)
+						(stProt := (ePcsAction := E_PcsAction.None), eScope := E_ProtScope.Bms),		// 4 BMS 통신 끊김 → 알람만 (ESS 원래: 유닛 대기)
+						(stProt := (ePcsAction := E_PcsAction.None), eScope := E_ProtScope.Group),		// 5 접속점 계측 무효 → 알람만 (ESS 원래: 그룹 대기)
 						(stProt := (ePcsAction := E_PcsAction.None), eScope := E_ProtScope.Site),		// 6 연기 감지 (TS-60) → 알람만
 						(stProt := (ePcsAction := E_PcsAction.None), eScope := E_ProtScope.Site)];		// 7 연기 감지 (ASD-57) → 알람만
 						(* BMS 하나가 빠져도 남은 BMS로 계속 돌리려면 3·4번 ePcsAction을 None으로 (3번은 eBatAction도 None: 배터리 조치는 PCS 정지·비상정지와만) *)
@@ -35,6 +35,7 @@
 
 	(* UPS 설정 보관값 (명세 CF-UPS-02). EMS에서 받은 설정. FB_UpsConfigApply가 쓰고, 바뀌면 fbPersistSave가 바로 저장 *)
 	g_astUpsDesired	: ARRAY[1..GVL_PARAM.UPS_COUNT] OF ST_UpsDesiredSet;
+	g_bUpsSafetyRespEnable	: BOOL := TRUE;	// 사고·고장 대응 동작 전체 스위치 (명세 SQ-05, 2026-11-17). TRUE = 대응 동작 허용 (사용자 요청 2026-11-18, 기본값 명세 SQ-05 v2.40). FALSE = 단계 판정·표시만
 	(* BMS 랙 선택표 (BMS 40001 랙 비트, 비트 n-1 = 랙 n). EMS 랙 명령(11·12)으로 바뀜. 0 = 저장 안 됨 → 설치된 랙 전부 *)
 	g_awBmsRackMask	: ARRAY[1..GVL_PARAM.BMS_COUNT] OF WORD;
 

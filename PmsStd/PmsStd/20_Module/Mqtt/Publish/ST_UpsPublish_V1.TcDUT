@@ -4,64 +4,64 @@
 {attribute 'pack_mode' := '1'}
 TYPE ST_UpsPublish_V1 :
 STRUCT
- DeviceIndex : UDINT; // UPS 번호 1~3
- SystemOperationMode : UDINT; // 시스템 운전모드 (enum) 0 수동, 1 모드스케줄. 출처 미정이라 지금은 0 [인터페이스 08.UPS 2026-11-12]
- OperationMode : UDINT; // 운전모드 (enum) 0 수동, 1 자동. 출처 미정이라 지금은 0
- Status : UDINT; // b0 통신에러 b1 warning b2 fault b3 e-stop b4 충전 중(I50 b13 Batt charg Flag)
- UPS_ModeStatus : UDINT; // b0 부동충전 b1 균등충전 b2 대기 b3 주기적 방전 b4 펄스 방전 b5 간헐충전 (b0~b5 = I50 BAT Mode 값 0~5)
-  // b6 비상 방전(I45 b8) b7 온도보상충전(I51 b2) b8 ECO(I48 b7) b9 PRLT(I50 b12) b10 Droop(I50 b11) b11 VSM(I45 b15) b12 Regen(I45 b8)
- MCCB_Status : UDINT; // b0 바이패스 M/C close b1 인버터 M/C close b2 입력 Pre M/C close b3 입력 M/C close b4 MBS C/B close b5 Out C/B Open (= I50 b1~b6, b5만 1이 개방)
- RectStatus : UDINT; // b0 정류부 기동(I45 b11) b1 정류부 정상(I45 b12) b2 Regen(I45 b8, 비상 방전)
- BBCStatus : UDINT; // b0 배터리 컨버터 기동(I46 b12) b1 배터리 컨버터 정상(I46 b13)
- InverterStatus : UDINT; // b0 인버터 기동(I48 b6) b1 인버터 정상(I48 b14) b2 인버터 출력(I48 b13 Load On Inverter)
- BypassStatus : UDINT; // b0 바이패스 출력(I48 b12 Load On Bypass)
- LineInputVoltage_R : REAL;
- LineInputVoltage_S : REAL;
- LineInputVoltage_T : REAL;
- InputFrequency : REAL;
- InputCurrent_R : REAL;
- InputCurrent_S : REAL;
- InputCurrent_T : REAL;
- InverterVoltage_R : REAL;
- InverterVoltage_S : REAL;
- InverterVoltage_T : REAL;
- InverterCurrent_R : REAL;
- InverterCurrent_S : REAL;
- InverterCurrent_T : REAL;
- BypassLineVoltage_R : REAL;
- BypassLineVoltage_S : REAL;
- BypassLineVoltage_T : REAL;
- BypassFrequency : REAL;
- LineOutputVoltage_R : REAL;
- LineOutputVoltage_S : REAL;
- LineOutputVoltage_T : REAL;
- FrequencyOutput : REAL;
- OutputCurrent_R : REAL;
- OutputCurrent_S : REAL;
- OutputCurrent_T : REAL;
- DcLinkVoltage : REAL;
- DcLinkVoltage_High : REAL;
- DcLinkVoltage_Low : REAL;
- BatteryVoltage : REAL;
- BatteryCurrent : REAL;
- MPI_A_Current : REAL;
- MPI_B_Current : REAL;
- MPI_C_Current : REAL;
- InputApparentPower : REAL;
- OutputApparentPower : REAL;
- OutputActivePower : REAL;
- Temp1 : REAL;
- Temp2 : REAL;
- Temp3 : REAL;
- Temp4 : REAL;
- Temp5 : REAL;
- Temp6 : REAL;
- // Warning·Fault: 칸 하나 = 맵 워드 2개 (하위 16비트 + 상위 16비트). 비트 위치는 맵 그대로. 마스크로 거른 경고장·중고장만 (명세 RD-UPS-02 v1.6)
- Warning1 : UDINT; // 경고장: 하위 I44 입력 / 상위 I45 정류부
- Warning2 : UDINT; // 경고장: 하위 I46 BBC / 상위 I47 출력
- Warning3 : UDINT; // 경고장: 하위 I51 STATUS2 (I48 경고 없음) / 상위 I49 바이패스
- Fault1 : UDINT; // 중고장: 하위 I44 입력 / 상위 I45 정류부
- Fault2 : UDINT; // 중고장: 하위 I46 BBC / 상위 I47 출력
- Fault3 : UDINT; // 중고장: 하위 I48 인버터 / 상위 I50 STATUS1 OR I51 STATUS2 (I49 고장 없음)
+	DeviceIndex : UDINT; // UPS 번호 1~3
+	SystemOperationMode : UDINT; // 시스템 운전모드 (enum) 0 수동, 1 모드스케줄. 출처 미정이라 지금은 0 [인터페이스 08.UPS 2026-11-12]
+	OperationMode : UDINT; // 운전모드 (enum) 0 수동, 1 자동. 출처 미정이라 지금은 0
+	Status : UDINT; // b0 통신에러 b1 warning b2 fault b3 e-stop b4 충전 중(I50 b13 Batt charg Flag)
+	UPS_ModeStatus : UDINT; // b0 부동충전 b1 균등충전 b2 대기 b3 주기적 방전 b4 펄스 방전 b5 간헐충전 (b0~b5 = I50 BAT Mode 값 0~5)
+		// b6 비상 방전(I45 b8) b7 온도보상충전(I51 b2) b8 ECO(I48 b7) b9 PRLT(I50 b12) b10 Droop(I50 b11) b11 VSM(I45 b15) b12 Regen(I45 b8)
+	MCCB_Status : UDINT; // b0 바이패스 M/C close b1 인버터 M/C close b2 입력 Pre M/C close b3 입력 M/C close b4 MBS C/B close b5 Out C/B Open (= I50 b1~b6, b5만 1이 개방)
+	RectStatus : UDINT; // b0 정류부 기동(I45 b11) b1 정류부 정상(I45 b12) b2 Regen(I45 b8, 비상 방전)
+	BBCStatus : UDINT; // b0 배터리 컨버터 기동(I46 b12) b1 배터리 컨버터 정상(I46 b13)
+	InverterStatus : UDINT; // b0 인버터 기동(I48 b6) b1 인버터 정상(I48 b14) b2 인버터 출력(I48 b13 Load On Inverter)
+	BypassStatus : UDINT; // b0 바이패스 출력(I48 b12 Load On Bypass)
+	LineInputVoltage_R : REAL;
+	LineInputVoltage_S : REAL;
+	LineInputVoltage_T : REAL;
+	InputFrequency : REAL;
+	InputCurrent_R : REAL;
+	InputCurrent_S : REAL;
+	InputCurrent_T : REAL;
+	InverterVoltage_R : REAL;
+	InverterVoltage_S : REAL;
+	InverterVoltage_T : REAL;
+	InverterCurrent_R : REAL;
+	InverterCurrent_S : REAL;
+	InverterCurrent_T : REAL;
+	BypassLineVoltage_R : REAL;
+	BypassLineVoltage_S : REAL;
+	BypassLineVoltage_T : REAL;
+	BypassFrequency : REAL;
+	LineOutputVoltage_R : REAL;
+	LineOutputVoltage_S : REAL;
+	LineOutputVoltage_T : REAL;
+	FrequencyOutput : REAL;
+	OutputCurrent_R : REAL;
+	OutputCurrent_S : REAL;
+	OutputCurrent_T : REAL;
+	DcLinkVoltage : REAL;
+	DcLinkVoltage_High : REAL;
+	DcLinkVoltage_Low : REAL;
+	BatteryVoltage : REAL;
+	BatteryCurrent : REAL;
+	MPI_A_Current : REAL;
+	MPI_B_Current : REAL;
+	MPI_C_Current : REAL;
+	InputApparentPower : REAL;
+	OutputApparentPower : REAL;
+	OutputActivePower : REAL;
+	Temp1 : REAL;
+	Temp2 : REAL;
+	Temp3 : REAL;
+	Temp4 : REAL;
+	Temp5 : REAL;
+	Temp6 : REAL;
+	// Warning·Fault: 회사 eventMap(001.UPS 경고장비트맵) 순서. 마스크로 거른 경고장·중고장을 맵 워드·비트 순서로 b0부터 빈칸 없이 (명세 RD-UPS-02 v2.20)
+	Warning1 : UDINT; // 경고장 30개 b0~b29: I44 입력 → I45 정류부 → I46 BBC → I47 출력 → I49 바이패스 → I51 STATUS2
+	Warning2 : UDINT; // 사용 안 함 (0)
+	Warning3 : UDINT; // 사용 안 함 (0)
+	Fault1 : UDINT; // 중고장 30개 b0~b29: I44 입력 → I45 정류부 → I46 BBC
+	Fault2 : UDINT; // 중고장 19개 b0~b18: I47 출력 → I48 인버터 → I50 STATUS1 → I51 STATUS2
+	Fault3 : UDINT; // 사용 안 함 (0)
 END_STRUCT
 END_TYPE]]></Declaration></DUT></TcPlcObject>

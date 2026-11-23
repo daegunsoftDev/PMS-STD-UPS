@@ -4,10 +4,10 @@
 {attribute 'qualified_only'}
 {attribute 'strict'}
 TYPE E_UpsChargeMode : (
- Off := 0, // 운전 없음
- Trickle := 1, // 간헐충전
- Periodic := 2, // 주기적 방전
- Pulse := 3 // 펄스 방전
+	Off := 0, // 운전 없음
+	Trickle := 1, // 간헐충전
+	Periodic := 2, // 주기적 방전
+	Pulse := 3 // 펄스 방전
 ) INT;
 END_TYPE]]></Declaration></DUT>
 </TcPlcObject>

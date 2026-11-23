@@ -4,6 +4,7 @@
     <Declaration><![CDATA[FUNCTION_BLOCK FB_MqttLoggerListener EXTENDS FB_ListenerBase2		// 로거 리스너: TwinCAT 이벤트 로거에 남은 PMS 이벤트를 받아 시각·문구를 큐에 쌓음 (로거 토픽 발행용. FB_MqttMain이 M_Cycle·M_GetPacket을 부름)
 (* - FB_EventLog가 이벤트 로거에 남긴 것을 그대로 받는다 (메시지 1회, 알람 발생·해소). 기록하는 곳은 FB_EventLog 하나이고, 이 FB는 받아서 옮기기만 한다
    - 받는 이벤트 클래스: PmsSystem·PmsProt·PmsOutput·PmsSeq (TwinCAT 시스템 이벤트는 받지 않음). 구독은 클래스 단위(TC_EVENT_CLASSES)
+   - PmsUps(UPS 사고·고장 단계, FB_UpsSafetyLog)는 일부러 받지 않는다: PMS 로그에만 남기고 EMS(pms_log)로는 안 보냄 (명세 SQ-01 v2.21)
    - 제어기 TwinCAT 런타임 3.1.4024.17 이상 필요 (FB_ListenerBase2). 낮으면 구독이 16#98110701(서비스 미지원)로 실패해 아무것도 받지 못함 (_hrSubscribe)
    - 문구: FB_RequestEventText로 비동기로 받는다 (UTF-8 → F_Utf8ToWstring). 해소는 앞에 '[해소] '.
      LOGGER_TEXT_MAX(100)자를 넘으면 99자 + '…'로 자르고 q_nTruncated를 센다 (문구 규칙: 인자를 채운 로그 문구 95자 이내, PMS_STD.md 7장)

@@ -35,7 +35,7 @@
 						stCloud			:= (bUse := FALSE, sHost := '10.0.0.0', nPort := 1883),
 						stLocal			:= (bUse := TRUE, sHost := '10.0.0.36', nPort := 1883),	// DGS MQTT 브로커 (현장 5). 브로커 끊김 감시 기본(Local)이 이 칸을 봄
 						stAzure			:= (bUse := FALSE, sHost := '10.0.0.3', nPort := 1883),
-						sUserName		:= 'dgs_admin',
+						sUserName		:= '',
 						sUserPassword	:= '');
 
 	(* 시험 모드: 사무실 가상 장비 시험용. 현장 빌드는 FALSE (가상 장비 연결 PRG_SimLink, 가상신호 GVL_TEST.g_astVirtual, 시험 리셋 GVL_TEST.g_bTestReset을 안 씀) *)

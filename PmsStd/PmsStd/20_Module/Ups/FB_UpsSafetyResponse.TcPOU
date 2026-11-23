@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_UpsSafetyResponse" Id="{b3373821-7f6f-40e9-a2ae-b1e32705c8ce}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_UpsSafetyResponse		// 사고·고장 대응 동작 (C안): 원인 → UPS·BMS 명령, 될 때까지 2초마다 다시 보내고 10초 넘으면 오류 표시
+(* 2026-11-17. 명세 SQ-05 (v2.16), 동작시퀀스 7쪽 표. 기반 없음(신규).
+   변경: 2026-11-18 ESD(b12) 대응을 나눔: 바이패스 절체 빼고 인버터 정지(H105) 추가, 순서 기다리지 않고 연달아 보냄 (명세 v2.18)
+   변경: 2026-11-20 화재(b11)는 ESD처럼: 바이패스 절체 안 함, 인버터·BBC·정류부를 기다리지 않고 연달아 (명세 SQ-05 v2.31)
+   변경: 2026-11-20 바이패스 이상(UPS Warning1 b16~25 = I49)이고 아직 바이패스가 아니면 바이패스 절체를 보내지 않음 → q_bBypassBlocked (v2.31, O-17)
+   변경: 2026-11-20 세방 맵 '인버터정지 To Bypass': 출력·인버터 중고장, 화재, MBS C/B Fail(대응 원인 b13)은 바이패스 절체가
+         확인된 뒤 인버터 정지(H105)도 보냄. 절체가 확인 안 되면 인버터를 끄지 않음(부하 유지). 원인은 q_nRespCause (명세 SQ-05 v2.30)
+   변경: 2026-11-18 "3초 확인·최대 3번 → 실패로 멈춤"을 "될 때까지 2초마다 계속 보냄, 10초 넘게 안 되면 오류 표시(그 뒤에도 계속)"로 바꿈 (명세 v2.19, 데스틴 PCS 통신 방식)
+   - 원인은 FB_UpsSafetyStage.q_nRespCause (지금 걸린 대응 원인, v2.30). 여러 원인이면 동작을 합친다
+   - 동작 6개 (비트): 0 충전 컨택터 열기(BMS 40014=0), 1 BMS 컨택터 전부 열기(40013~15=0),
+     2 바이패스 절체(UPS H109), 3 BBC 정지(H107), 4 정류부 정지(H103), 5 인버터 정지(H105, ESD 또는 절체 확인 뒤)
+   - 먼저 확인해서 이미 그 상태면 명령하지 않는다. 명령 → i_tResend 기다림 → 안 됐으면 다시. 될 때까지 계속
+   - i_tFail 넘게 안 되면 q_wFailed(오류)를 켠다. 오류가 켜져도 계속 보낸다. 되면 오류는 꺼진다
+   - 드라이버가 못 받은 명령(바쁨·통신 끊김)은 기다리지 않고 다음 스캔에 다시 보낸다 (보낸 횟수에 넣지 않음)
+   - 된 동작은 원인이 사라졌다가 다시 생길 때까지 다시 하지 않는다 (사람이 다시 켠 것을 되돌리지 않음)
+   - UPS 명령은 스캔마다 하나. 순서는 바이패스 → 인버터(절체 확인 뒤) → BBC → 정류부: 앞 동작이 되거나 오류가 켜져야 다음 동작을 보낸다
+     BMS는 전부 열기가 필요하면 충전만 열기는 하지 않는다
+   - ESD나 화재가 걸려 있으면: 바이패스 절체는 하지 않는다(다른 원인이 요구해도). UPS 명령은 앞 동작을 기다리지 않고
+     인버터 → BBC → 정류부 순으로 연달아 보낸다
+   - i_bEnable(전체 스위치 AND 쓰기 관문)이 꺼지면 모두 처음 상태로
+   - UPS 명령은 i_ipUps로 직접 보낸다. BMS 명령은 q_eBmsReq(그 스캔만)로 내고 MAIN이 드라이버를 부른다
+   - 복귀(다시 켜기), MCCB Trip, 바이패스 포함 출력 차단, BMS E-stop은 하지 않는다 *)
+VAR_INPUT
+	i_bEnable		: BOOL;					// GVL_PERSIST.g_bUpsSafetyRespEnable AND 장비 쓰기 관문
+	i_nCause		: UDINT;				// FB_UpsSafetyStage.q_nRespCause (대응 원인, v2.30)
+	i_stUps			: ST_UpsPublish_V1;		// UPS 보고값 (RectStatus b0, BBCStatus b0, InverterStatus b0, BypassStatus b0)
+	i_bUpsValid		: BOOL;					// UPS 통신 정상
+	i_stBms			: ST_EsolutionState;	// BMS 상태 (컨택터 30026·30027)
+	i_ipUps			: I_Ups;				// UPS 명령 대상
+	i_tResend		: TIME := T#2S;			// 보낸 뒤 다시 보내기까지 (응답 대기 1초 + 쉼 1초)
+	i_tFail			: TIME := T#10S;		// 이 시간 넘게 안 되면 오류 표시 (보내기는 계속)
+END_VAR
+VAR_OUTPUT
+	q_wNeeded		: WORD;					// 지금 필요한 동작 (비트 0~5)
+	q_wDone			: WORD;					// 된 동작
+	q_wFailed		: WORD;					// 오류: i_tFail 넘게 안 된 동작 (계속 보내는 중. EMS 칸 없음, PLC 안에서만)
+	q_eBmsReq		: UINT;					// BMS 요청: 0 없음, 1 충전 컨택터 열기, 2 전부 열기 (MAIN이 드라이버에 전달)
+	q_nBmsSeq		: UDINT;				// 전부 열기 명령 번호 (M_SetStateCmd 중복 거르기용, 16#7F000000부터)
+	q_anTry			: ARRAY[0..5] OF UINT;	// 동작별 보낸 횟수 (드라이버가 받은 것만, 65535에서 멈춤)
+	q_bEsd			: BOOL;					// ESD·화재 대응 중 (순서 기다리지 않음, 바이패스 절체 안 함, v2.31 화재 포함)
+	q_bBypassBlocked : BOOL;				// 바이패스 이상이라 바이패스 절체를 보내지 않는 중 (기록 BypassBlocked, v2.31)
+END_VAR
+VAR
+	_anState		: ARRAY[0..5] OF UINT;	// 0 보낼 차례, 1 보낸 뒤 기다림, 2 됨
+	_atonResend		: ARRAY[0..5] OF TON;
+	_atonFail		: ARRAY[0..5] OF TON;
+	_abAchieved		: ARRAY[0..5] OF BOOL;
+	_k				: INT;
+	_i				: INT;
+	_bNeed			: BOOL;
+	_bUpsSent		: BOOL;					// 이번 스캔에 UPS 명령을 이미 시도함
+	_bUpsHold		: BOOL;					// 앞 UPS 동작이 진행 중이라 뒤 동작은 기다림 (ESD가 아닐 때)
+	_nBmsCount		: UDINT;
+	_wBit			: WORD;
+	_eCmd			: E_UpsCommand;
+	_bInvStopArmed	: BOOL;					// 인버터 정지 To Bypass: 바이패스가 확인돼 인버터 정지를 시작함 (원인이 사라질 때까지 유지)
+END_VAR
+VAR CONSTANT
+	ACT_CHG_OPEN	: INT := 0;
+	ACT_BMS_OPEN	: INT := 1;
+	ACT_BYPASS		: INT := 2;
+	ACT_BBC_OFF		: INT := 3;
+	ACT_RECT_OFF	: INT := 4;
+	ACT_INV_OFF		: INT := 5;
+	// 진행 순서 (동작 번호). UPS는 바이패스 → 인버터 → BBC → 정류부
+	ORDER			: ARRAY[0..5] OF INT := [0, 1, 2, 5, 3, 4];
+	// SQ-01 원인 비트
+	C_BMS_MINOR		: UDINT := 16#00000004;	// b2
+	C_BBC_GROUP		: UDINT := 16#00000388;	// b3 BMS Major, b7 RCD1, b8 BBC 중고장, b9 RCD2
+	C_RECT			: UDINT := 16#00000010;	// b4 입력·정류부 중고장
+	C_INV			: UDINT := 16#00002060;	// b5 출력, b6 인버터 중고장, b13 MBS C/B Fail → 바이패스 절체
+	C_INV_STOP		: UDINT := 16#00002060;	// b5, b6, b13 MBS: 맵 '인버터정지 To Bypass' → 절체 확인 뒤 인버터 정지 (화재는 v2.31부터 ESD처럼)
+	C_FULL			: UDINT := 16#00000400;	// b10 BMS Level 3 (화재는 v2.31부터 C_ESD)
+	C_ESD			: UDINT := 16#00001800;	// b11 화재, b12 ESD: 바이패스 절체 안 함, 인버터·BBC·정류부 정지 + BMS 전부 열기 (v2.31)
+	W1_BYPASS		: UDINT := 16#03FF0000;	// UPS Warning1 b16~25 = I49 바이패스 이상 (맵 'To Bypass 절체 안 됨')
+	BMS_SEQ_BASE	: UDINT := 16#7F000000;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// 0) 됐는지 (확인 신호를 믿을 수 없으면 안 된 것으로 봄)
+_abAchieved[ACT_CHG_OPEN] := i_stBms.bContactorFeedbackKnown AND NOT i_stBms.bChargeContactorClosed;
+_abAchieved[ACT_BMS_OPEN] := i_stBms.bContactorFeedbackKnown AND i_stBms.wSystemContactor = 0 AND i_stBms.wRackContactor = 0;
+_abAchieved[ACT_BYPASS] := i_bUpsValid AND i_stUps.BypassStatus.0;
+_abAchieved[ACT_BBC_OFF] := i_bUpsValid AND NOT i_stUps.BBCStatus.0;
+_abAchieved[ACT_RECT_OFF] := i_bUpsValid AND NOT i_stUps.RectStatus.0;
+_abAchieved[ACT_INV_OFF] := i_bUpsValid AND NOT i_stUps.InverterStatus.0;
+
+// 1) 원인 → 필요한 동작
+q_wNeeded := 0;
+q_bBypassBlocked := FALSE;
+q_bEsd := i_bEnable AND (i_nCause AND C_ESD) <> 0;
+IF i_bEnable THEN
+	IF (i_nCause AND C_BMS_MINOR) <> 0 THEN q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_CHG_OPEN); END_IF
+	IF (i_nCause AND C_BBC_GROUP) <> 0 THEN q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_BBC_OFF); END_IF
+	IF (i_nCause AND C_RECT) <> 0 THEN
+		q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_RECT_OFF) OR SHL(WORD#1, ACT_CHG_OPEN);
+	END_IF
+	IF (i_nCause AND C_INV) <> 0 THEN q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_BYPASS); END_IF
+	IF (i_nCause AND C_FULL) <> 0 THEN
+		q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_BYPASS) OR SHL(WORD#1, ACT_BBC_OFF) OR SHL(WORD#1, ACT_RECT_OFF) OR SHL(WORD#1, ACT_BMS_OPEN);
+	END_IF
+	// 인버터 정지 To Bypass (v2.30): 바이패스가 확인된 뒤에만 시작. 시작하면 원인이 사라질 때까지 유지
+	IF (i_nCause AND C_INV_STOP) = 0 THEN
+		_bInvStopArmed := FALSE;
+	ELSIF _abAchieved[ACT_BYPASS] THEN
+		_bInvStopArmed := TRUE;
+	END_IF
+	IF _bInvStopArmed THEN q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_INV_OFF); END_IF
+	// 바이패스 이상 (v2.31, O-17): 아직 바이패스가 아니면 절체를 보내지 않음 (부하는 인버터로 유지). 바이패스가 정상이 되면 다시 필요해짐
+	IF NOT q_bEsd AND (q_wNeeded AND SHL(WORD#1, ACT_BYPASS)) <> 0 AND NOT _abAchieved[ACT_BYPASS]
+		AND i_bUpsValid AND (i_stUps.Warning1 AND W1_BYPASS) <> 0 THEN
+		q_bBypassBlocked := TRUE;
+		q_wNeeded := q_wNeeded AND NOT SHL(WORD#1, ACT_BYPASS);
+	END_IF
+	IF q_bEsd THEN
+		q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_INV_OFF) OR SHL(WORD#1, ACT_BBC_OFF) OR SHL(WORD#1, ACT_RECT_OFF) OR SHL(WORD#1, ACT_BMS_OPEN);
+		q_wNeeded := q_wNeeded AND NOT SHL(WORD#1, ACT_BYPASS);	// 비상정지 중에 부하를 바이패스로 다시 살리지 않음
+	END_IF
+	IF (q_wNeeded AND SHL(WORD#1, ACT_BMS_OPEN)) <> 0 THEN
+		q_wNeeded := q_wNeeded AND NOT SHL(WORD#1, ACT_CHG_OPEN);	// 전부 열기가 충전 열기를 포함
+	END_IF
+ELSE
+	_bInvStopArmed := FALSE;
+END_IF
+
+// 2) 동작별 진행 (ORDER 순서)
+_bUpsSent := FALSE;
+_bUpsHold := FALSE;
+q_eBmsReq := 0;
+FOR _k := 0 TO 5 DO
+	_i := ORDER[_k];
+	_wBit := SHL(WORD#1, _i);
+	_bNeed := (q_wNeeded AND _wBit) <> 0;
+	_atonResend[_i](IN := _bNeed AND _anState[_i] = 1, PT := i_tResend);
+	IF NOT _bNeed THEN
+		_anState[_i] := 0;		// 원인이 사라짐 (또는 꺼짐) → 다음에 다시 생기면 처음부터
+		q_anTry[_i] := 0;
+	ELSE
+		CASE _anState[_i] OF
+			0:	// 보낼 차례
+				IF _abAchieved[_i] THEN
+					_anState[_i] := 2;	// 이미 그 상태
+				ELSIF _i = ACT_CHG_OPEN OR _i = ACT_BMS_OPEN THEN
+					IF q_eBmsReq = 0 THEN
+						IF _i = ACT_BMS_OPEN THEN
+							q_eBmsReq := 2;
+							_nBmsCount := _nBmsCount + 1;
+							q_nBmsSeq := BMS_SEQ_BASE + (_nBmsCount AND 16#00FFFFFF);
+						ELSE
+							q_eBmsReq := 1;
+						END_IF
+						IF q_anTry[_i] < 65535 THEN q_anTry[_i] := q_anTry[_i] + 1; END_IF
+						_anState[_i] := 1;
+					END_IF
+				ELSIF NOT _bUpsSent AND NOT _bUpsHold AND i_ipUps <> 0 THEN
+					CASE _i OF
+						ACT_BYPASS:		_eCmd := E_UpsCommand.ToBypass;
+						ACT_BBC_OFF:	_eCmd := E_UpsCommand.BbcOff;
+						ACT_RECT_OFF:	_eCmd := E_UpsCommand.RectifierOff;
+						ACT_INV_OFF:	_eCmd := E_UpsCommand.InverterOff;
+					END_CASE
+					_bUpsSent := TRUE;	// UPS는 스캔마다 하나
+					IF i_ipUps.M_RequestCommand(_eCmd) THEN
+						IF q_anTry[_i] < 65535 THEN q_anTry[_i] := q_anTry[_i] + 1; END_IF
+						_anState[_i] := 1;
+					END_IF	// 못 받았으면 0에 남아 다음 스캔에 다시
+				END_IF
+			1:	// 보낸 뒤 기다림
+				IF _abAchieved[_i] THEN
+					_anState[_i] := 2;
+				ELSIF _atonResend[_i].Q THEN
+					_anState[_i] := 0;	// 다시 보냄
+				END_IF
+		END_CASE
+	END_IF
+	_atonFail[_i](IN := _bNeed AND _anState[_i] <> 2, PT := i_tFail);
+	// ESD가 아니면 앞 UPS 동작이 되거나 오류가 켜질 때까지 뒤 UPS 동작은 기다림
+	IF _i >= ACT_BYPASS AND _bNeed AND _anState[_i] <> 2 AND NOT _atonFail[_i].Q AND NOT q_bEsd THEN
+		_bUpsHold := TRUE;
+	END_IF
+END_FOR
+
+q_wDone := 0;
+q_wFailed := 0;
+FOR _i := 0 TO 5 DO
+	IF _anState[_i] = 2 THEN q_wDone := q_wDone OR SHL(WORD#1, _i); END_IF
+	IF _atonFail[_i].Q THEN q_wFailed := q_wFailed OR SHL(WORD#1, _i); END_IF
+END_FOR]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

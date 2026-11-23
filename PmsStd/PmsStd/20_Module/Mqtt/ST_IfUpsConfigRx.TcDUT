@@ -4,7 +4,7 @@
 {attribute 'pack_mode' := '1'}
 TYPE ST_IfUpsConfigRx :
 STRUCT
- nRxCount : UDINT; // 수신 누계
- astConfig : ARRAY[0..GVL_PARAM.UPS_COUNT-1] OF ST_UpsConfig_Rx; // UPS별 설정
+	nRxCount : UDINT; // 수신 누계
+	astConfig : ARRAY[0..GVL_PARAM.UPS_COUNT-1] OF ST_UpsConfig_Rx; // UPS별 설정
 END_STRUCT
 END_TYPE]]></Declaration></DUT></TcPlcObject>

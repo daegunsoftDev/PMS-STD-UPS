@@ -4,9 +4,9 @@
 // nSeq가 요청 번호와 같고 bConfirmed가 TRUE여야 완료로 본다.
 TYPE ST_UpsChargeFeedback :
 STRUCT
- bValid : BOOL; // 확인 응답
- nSeq : UDINT; // 확인한 요청 번호
- bConfirmed : BOOL; // 동작 확인 완료
+	bValid : BOOL; // 확인 응답
+	nSeq : UDINT; // 확인한 요청 번호
+	bConfirmed : BOOL; // 동작 확인 완료
 END_STRUCT
 END_TYPE]]></Declaration></DUT>
 </TcPlcObject>

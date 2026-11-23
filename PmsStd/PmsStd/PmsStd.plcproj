@@ -1111,6 +1111,10 @@
       <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_Standard</Namespace>
     </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_SUPS">
+      <DefaultResolution>Tc2_SUPS, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_SUPS</Namespace>
+    </PlaceholderReference>
     <PlaceholderReference Include="Tc2_System">
       <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
       <Namespace>Tc2_System</Namespace>
@@ -1274,6 +1278,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="20_Module\Driver\Esolution\FB_BmsContactorCommand.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\FB_UpsSafetyResponse.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\FB_UpsSafetyLog.TcPOU">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

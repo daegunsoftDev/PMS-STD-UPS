@@ -4,7 +4,7 @@
     <Declaration><![CDATA[(* EMS UPS 명령 → 세방 UPS 명령 레지스터(0x55) 요청, 온도보상 켜짐 상태 복구 (⑤출력 / 장치: UPS). 2026-11-05.
    기반 없음(신규).
    변경: 없음
-   부호·단위: 해당 없음. 명세: C:\gil\UPS\명세서\UPS_명세서.md WR-UPS-01, WR-SQ-01, CF-UPS-03(켜짐 상태)
+   부호·단위: 해당 없음. 명세: C:\gil\UPS\명세서\UPS_명세서.md WR-UPS-01, CF-UPS-03(켜짐 상태). WR-SQ-01은 v2.38에서 폐기
    - 2026-11-12 인터페이스 100.Command: CommandType은 번호 1~26. 번호 n → 세방 맵 명령 주소 99+n (H100~H125)에 0x55
      1 리셋 2 버저 정지 3·4 정류부 ON·OFF 5·6 인버터 ON·OFF 7·8 BBC ON·OFF 9 인버터로 절체 10 바이패스로 절체
      11 부동충전 12 균등충전 13·14 Auto ON·OFF 15 비상 방전 16 주기적 방전 17 펄스 방전 18 방전 취소
@@ -12,6 +12,8 @@
    - 레코드 하나 = 명령 하나. 중복 거르기(SequenceNumber)와 Delay 대기는 앞에서 FB_EmsCmdGate가 한다
    - 거부: UPS 통신이상이면 모두. UPS 고장(Status b2)이나 e-stop(b3) 중이면 켜기·시작 명령(START_TYPES). 끄기·취소·리셋은 보냄
    - 쓰기 허용(i_bEnable)이 꺼져 있으면 실행하지 않고 Disabled. 1~26 밖은 BadRequest
+   - 2026-11-17: 드라이버가 바빠 기다리는 동안에도 매 스캔 다시 본다. 고장·e-stop이 생기면 대기 중인 시작 명령을 취소(BadRequest),
+     쓰기 허용이 꺼지면 취소(Disabled). 끄기·취소·리셋은 그대로 보낸다
    - Fault 단계 확인은 EMS가 한다 (명세 v2.4). q_bAck는 늘 FALSE
    - 온도보상: 켜 둬야 하는데(iq_stDesired.bTempCompOn) UPS가 꺼져 있으면 i_tRecheck마다 시작 명령을 다시 보낸다.
      i_nMaxFail회 연속으로 켜지지 않으면 q_bEnableMismatch를 켜고 멈춘다. 21·22를 받으면 풀린다 *)
@@ -30,7 +32,7 @@ VAR_IN_OUT
 	iq_stDesired	: ST_UpsDesiredSet;		// 켜짐 상태 보관값 (GVL_PERSIST.g_astUpsDesired[n])
 END_VAR
 VAR_OUTPUT
-	q_bAck				: BOOL;				// Fault 단계 확인. EMS가 하므로 늘 FALSE (v2.4, MAIN 연결 유지용)
+	q_bAck				: BOOL;				// Fault 단계 확인. EMS가 하므로 늘 FALSE (v2.4). v2.38부터 MAIN에서 쓰지 않음 (PMS 안 Fault 유지 없앰)
 	q_nLastType			: UDINT;			// 마지막으로 받은 명령 번호
 	q_eLastResult		: E_UpsResult;		// 마지막 명령 결과
 	q_nRejectCount		: UDINT;			// 상태 때문에 거부한 명령 수
@@ -96,6 +98,17 @@ END_IF
 
 // 2) 드라이버에 요청. 받아들이면 켜짐 상태 보관값 갱신
 _bAccepted := FALSE;
+// 2026-11-17: 기다리는 동안 상태가 바뀌면 대기 명령을 취소 (받을 때만 보던 것을 매 스캔 다시 봄)
+IF _nPending <> 0 THEN
+	IF (_bFault OR _bEStop) AND (START_TYPES AND SHL(DWORD#1, UDINT_TO_INT(_nPending))) <> 0 THEN
+		_nPending := 0;
+		q_nRejectCount := q_nRejectCount + 1;	// 고장·e-stop이 생겨 시작 명령 취소
+		q_eLastResult := E_UpsResult.BadRequest;
+	ELSIF NOT i_bEnable OR i_ipUps = 0 THEN
+		_nPending := 0;
+		q_eLastResult := E_UpsResult.Disabled;
+	END_IF
+END_IF
 _tonRequest(IN := _nPending <> 0, PT := i_tRequestTimeout);
 IF _nPending <> 0 THEN
 	CASE _nPending OF	// 번호 n → 맵 주소 99+n (E_UpsCommand 값 = 주소)

@@ -3,7 +3,7 @@
 {attribute 'pack_mode' := '1'}
 TYPE ST_UpsConfigWirePacket :
 STRUCT
- Header : ST_MqttCommandHeader; // MQTT 공통 헤더
- Records : ARRAY[0..GVL_PARAM.UPS_COUNT-1] OF ST_UpsConfig_Rx; // UPS별 설정
+	Header : ST_MqttCommandHeader; // MQTT 공통 헤더
+	Records : ARRAY[0..GVL_PARAM.UPS_COUNT-1] OF ST_UpsConfig_Rx; // UPS별 설정
 END_STRUCT
 END_TYPE]]></Declaration></DUT></TcPlcObject>

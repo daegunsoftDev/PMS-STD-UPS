@@ -174,6 +174,20 @@
       "item": "20_Module\\Driver\\Esolution\\FB_BmsContactorCommand.TcPOU",
       "pulled_from": "generated:../UPS/src/BatRack/FB_BmsContactorCommand.st",
       "guid_reissued": false
+    },
+    "FB_UpsSafetyResponse": {
+      "variant": "5c116254",
+      "code_hash": "5c11625457ae78034a656d563af041f62145941c",
+      "item": "20_Module\\Ups\\FB_UpsSafetyResponse.TcPOU",
+      "pulled_from": "generated:../UPS/src/UpsSafety/FB_UpsSafetyResponse.st",
+      "guid_reissued": false
+    },
+    "FB_UpsSafetyLog": {
+      "variant": "da8aead0",
+      "code_hash": "da8aead04a8f2aa42275b3239ebaf90eb701d50a",
+      "item": "20_Module\\Ups\\FB_UpsSafetyLog.TcPOU",
+      "pulled_from": "generated:../UPS/src/UpsSafety/FB_UpsSafetyLog.st",
+      "guid_reissued": false
     }
   }
 }

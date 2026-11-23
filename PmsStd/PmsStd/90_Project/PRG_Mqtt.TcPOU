@@ -16,7 +16,7 @@ VAR
 	fbGateBat		: FB_EmsCmdGate;		// command/bat
 	fbGateUps		: FB_EmsCmdGate;		// command/ups
 	stRptCopy		: ST_IfReport;		// 보고 칸의 마지막 일관된 복사본
- stRptCandidate : ST_IfReport; // 복사 중인 보고값
+	stRptCandidate : ST_IfReport; // 복사 중인 보고값
 	nRptSeq			: UDINT;
 	bRptValid		: BOOL;
 	nRxTotal		: UDINT;				// command 메시지 수신 누계 (브로커 3개 합)
@@ -47,7 +47,7 @@ nRptSeq := GVL_IF.g_nReportSeq;
 IF (nRptSeq AND 1) = 0 AND nRptSeq <> 0 THEN
 	stRptCandidate := GVL_IF.g_stReport;
 	IF GVL_IF.g_nReportSeq = nRptSeq THEN
-  stRptCopy := stRptCandidate;
+		stRptCopy := stRptCandidate;
 		bRptValid := TRUE;
 	END_IF
 END_IF
@@ -58,44 +58,44 @@ IF bRptValid THEN
 			g_stPcsPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i);
 		END_IF
 	END_FOR
- FOR i := 1 TO GVL_PARAM.BMS_COUNT DO
-  IF stRptCopy.abBatMapped[i] THEN
-   g_stBatPublish.Devices[i - 1] := stRptCopy.astBat[i];
-   g_stBatPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i);
-  END_IF
- END_FOR
- FOR i := 1 TO GVL_PARAM.RACK_COUNT DO
-  IF stRptCopy.abBatMapped[(i - 1) / GVL_PARAM.RACKS_PER_BMS + 1] THEN
-   g_stRackPublish.Devices[i - 1] := stRptCopy.astRack[i];
-  END_IF
- END_FOR
- FOR i := 1 TO GVL_PARAM.BAT_MODULE_COUNT DO
-  IF stRptCopy.abBatMapped[(i - 1) / (GVL_PARAM.RACKS_PER_BMS * GVL_PARAM.MODULES_PER_RACK) + 1] THEN
-   g_stModulePublish.Devices[i - 1] := stRptCopy.astModule[i];
-  END_IF
- END_FOR
- FOR i := 1 TO GVL_PARAM.UPS_COUNT DO
-  IF stRptCopy.abUpsMapped[i] THEN
-   g_stUpsPublish.Devices[i - 1] := stRptCopy.astUps[i];
-   g_stUpsPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i); // 번호 1부터
-  END_IF
- END_FOR
- FOR i := 1 TO GVL_PARAM.IMD_COUNT DO
-  IF stRptCopy.abImdMapped[i] THEN
-   g_stImdPublish.Devices[i - 1] := stRptCopy.astImd[i];
-   g_stImdPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i); // 번호 1부터
-  END_IF
- END_FOR
- FOR i := 1 TO GVL_PARAM.FIRE_COUNT DO
-  IF stRptCopy.abFireMapped[i] THEN
-   g_stFirePublish.Devices[i - 1] := stRptCopy.astFire[i]; // 번호 1부터 (MAIN이 채움)
-  END_IF
- END_FOR
- FOR i := 1 TO GVL_PARAM.TEMP_COUNT DO
-  IF stRptCopy.abTempMapped[i] THEN
-   g_stTempPublish.Devices[i - 1] := stRptCopy.astTemp[i]; // 시험 더미 위에 덮어씀
-  END_IF
- END_FOR
+	FOR i := 1 TO GVL_PARAM.BMS_COUNT DO
+		IF stRptCopy.abBatMapped[i] THEN
+			g_stBatPublish.Devices[i - 1] := stRptCopy.astBat[i];
+			g_stBatPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i);
+		END_IF
+	END_FOR
+	FOR i := 1 TO GVL_PARAM.RACK_COUNT DO
+		IF stRptCopy.abBatMapped[(i - 1) / GVL_PARAM.RACKS_PER_BMS + 1] THEN
+			g_stRackPublish.Devices[i - 1] := stRptCopy.astRack[i];
+		END_IF
+	END_FOR
+	FOR i := 1 TO GVL_PARAM.BAT_MODULE_COUNT DO
+		IF stRptCopy.abBatMapped[(i - 1) / (GVL_PARAM.RACKS_PER_BMS * GVL_PARAM.MODULES_PER_RACK) + 1] THEN
+			g_stModulePublish.Devices[i - 1] := stRptCopy.astModule[i];
+		END_IF
+	END_FOR
+	FOR i := 1 TO GVL_PARAM.UPS_COUNT DO
+		IF stRptCopy.abUpsMapped[i] THEN
+			g_stUpsPublish.Devices[i - 1] := stRptCopy.astUps[i];
+			g_stUpsPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i); // 번호 1부터
+		END_IF
+	END_FOR
+	FOR i := 1 TO GVL_PARAM.IMD_COUNT DO
+		IF stRptCopy.abImdMapped[i] THEN
+			g_stImdPublish.Devices[i - 1] := stRptCopy.astImd[i];
+			g_stImdPublish.Devices[i - 1].DeviceIndex := UINT_TO_UDINT(i); // 번호 1부터
+		END_IF
+	END_FOR
+	FOR i := 1 TO GVL_PARAM.FIRE_COUNT DO
+		IF stRptCopy.abFireMapped[i] THEN
+			g_stFirePublish.Devices[i - 1] := stRptCopy.astFire[i]; // 번호 1부터 (MAIN이 채움)
+		END_IF
+	END_FOR
+	FOR i := 1 TO GVL_PARAM.TEMP_COUNT DO
+		IF stRptCopy.abTempMapped[i] THEN
+			g_stTempPublish.Devices[i - 1] := stRptCopy.astTemp[i]; // 시험 더미 위에 덮어씀
+		END_IF
+	END_FOR
 END_IF
 
 (* 1-3. config echo: MAIN이 GVL_IF에 채운 실제 설정을 번호를 확인하며 복사 → GVL_MQTT applied 칸 (FB_MqttMain이 config echo로 발행) [9-21 수정 2026-11-04: 추가] *)
@@ -130,11 +130,11 @@ GVL_IF.g_abBrokerConn	:= fbMqttMain.q_abBrokerConn;
 
 // config/ups is raw receipt staging only. No setting application or hardware request.
 IF GVL_MQTT.g_anCfgRxCount[4]<>nUpsConfigRxCount THEN
- nUpsConfigRxCount:=GVL_MQTT.g_anCfgRxCount[4];
- GVL_IF.g_nUpsConfigSeq:=GVL_IF.g_nUpsConfigSeq+1;
- GVL_IF.g_stUpsConfigRx.astConfig:=GVL_MQTT.g_astUpsConfig;
- GVL_IF.g_stUpsConfigRx.nRxCount:=nUpsConfigRxCount;
- GVL_IF.g_nUpsConfigSeq:=GVL_IF.g_nUpsConfigSeq+1;
+	nUpsConfigRxCount:=GVL_MQTT.g_anCfgRxCount[4];
+	GVL_IF.g_nUpsConfigSeq:=GVL_IF.g_nUpsConfigSeq+1;
+	GVL_IF.g_stUpsConfigRx.astConfig:=GVL_MQTT.g_astUpsConfig;
+	GVL_IF.g_stUpsConfigRx.nRxCount:=nUpsConfigRxCount;
+	GVL_IF.g_nUpsConfigSeq:=GVL_IF.g_nUpsConfigSeq+1;
 END_IF
 
 (* 2-1. 로거 발행 시험 (시험 모드. 버튼을 누를 때만 로그를 남김, 결과는 PRG_TestLogger 머리말) *)

@@ -1666,6 +1666,55 @@
 				<Hide GUID="{1A8DC7F2-19D2-40AE-8EC6-323BC7B5CA57}"/>
 			</Hides>
 		</DataType>
+		<DataType>
+			<Name GUID="{3A691667-E5FB-4AB6-BCBA-129CE4515983}" PersistentType="true">PmsUps</Name>
+			<DisplayName TxtId=""><![CDATA[PMS UPS 사고·고장]]></DisplayName>
+			<EventId>
+				<Name Id="1">CauseActive</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} 사고·고장 {1}단계: {2}]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="2">StageChange</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} 사고·고장 단계 {1} → {2}]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="3">AckPending</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} Fault 원인 해소, 운영자 확인 대기: {1}]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="4">CommLost</Name>
+				<DisplayName TxtId=""><![CDATA[{1} {0} 통신장애 - 끊긴 동안 사고·고장 판정은 마지막 값 유지]]></DisplayName>
+				<Severity>Warning</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="5">FaultAck</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} Fault 확인: 내림 {1} / 남음 {2}]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="6">RespCmd</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} 대응: {1} 명령 보냄]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="7">RespDone</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} 대응: {1} 완료 ({2})]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="8">RespFail</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} 대응 오류: {1} 10초 넘게 안 됨, 계속 보내는 중]]></DisplayName>
+				<Severity>Error</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="9">BypassBlocked</Name>
+				<DisplayName TxtId=""><![CDATA[UPS {0} 대응: 바이패스 이상으로 바이패스 절체 안 함 - 인버터 유지 (바이패스가 정상이 되면 절체)]]></DisplayName>
+				<Severity>Error</Severity>
+			</EventId>
+		</DataType>
 	</DataTypes>
 	<Project ProjectGUID="{8A0DB769-AC05-4B8F-9453-3FD99ABF42BE}" TargetNetId="5.69.107.242.1.1" ShowHideConfigurations="#x6">
 		<System>

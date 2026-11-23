@@ -1,9 +1,13 @@
 # UPS 공통 MQTT 인터페이스 틀
 
+> 2026-11-17 MODULE 인터페이스 갱신: 최신 `10. Module.xlsx` V1 순서에 맞춰 인덱스 3칸 뒤 `ModuleVolatge1~3`, `ModuleTemp1~3`, `CellVoltage1~20`을 보냅니다. `Volatge` 철자는 원본 계약대로 유지합니다. 레코드는 104 → **116바이트**, 현재 72모듈은 헤더 포함 **8,392바이트**입니다. `ModuleVolatge1`은 BMS 랙 상세 D+15+m의 uint16 ×0.01 V이고, 별도 맵이 없는 2·3은 0입니다. 아래 이전 104바이트 설명보다 이 정의를 우선합니다. EMS·시험 수신기는 같은 순서와 크기로 갱신해야 합니다.
+
 > 2026-11-02 UPS 보고 매핑 추가: 아래의 기존 미연결·발행 차단 설명보다 이 내용을 우선한다.
 >
 > `FB_RptSebangUps`로 UPS 계측값 41개를 연결했다. 경로는 `MAIN.A_Report → GVL_IF.g_stReport.astUps → PRG_Mqtt → g_stUpsPublish.Devices`다. `UPS_REPORT_ENABLED=TRUE`, 브로커는 `stLocal`(192.168.0.194:1883)만 사용한다. `g_fbUps1`은 UPS 시뮬레이터 보드(192.0.0.98:23, Unit 1)에 접속한다.
 >
+> (2026-11-18 명세 v2.20) UPS Warning·Fault 칸은 회사 eventMap(`인터페이스/001.UPS 경고장비트맵.xlsx`) 순서다. 경고장·중고장 비트를 맵 워드·비트 순서로 b0부터 빈칸 없이 채운다: 경고장 → Warning1 b0~29, 중고장 I44~I46 → Fault1 b0~29, I47~I51 → Fault2 b0~18. Warning2·3, Fault3은 0이다. 아래 08.UPS 문단의 "마스크로 채운다"는 이 순서로 읽는다.
+
 > (2026-11-12 인터페이스 08.UPS 반영) UPS 레코드 앞부분은 DeviceIndex, SystemOperationMode, OperationMode, Status(b0 통신에러 b1 warning b2 fault b3 e-stop b4 충전 중), UPS_ModeStatus(b0~b12 운전 모드), MCCB_Status(STATUS1 b1~b6), RectStatus, BBCStatus, InverterStatus, BypassStatus 10칸(UDINT)이다. SystemOperationMode·OperationMode는 출처가 정해지지 않아 0이다. Warning1~3·Fault1~3은 세방 맵 Alarm Flag 경고장·중고장 마스크로 채운다. `FB_UpsModbusJob`의 타임아웃이 0으로 고정되던 오류도 고쳤다. 쓰기 차단은 유지한다. TwinCAT 빌드·보드 통신·브로커 시험은 이 갱신 시점에 하지 않았다.
 
 > 2026-10-30 BAT 보고 매핑 추가: 아래의 기존 미연결 설명 중 BAT 계측값 부분은 이 갱신 내용을 우선한다.
@@ -23,7 +27,7 @@
 | 08.UPS.xlsx | V1 | ST_UpsPublish_V1, 필드49개 |
 | 03.BAT.xlsx | V1 | ST_BatPublish_V1, Warning/Fault 1~10 확장 포함 |
 | 04.Rack.xlsx | V1 | ST_RackPublish_V1, DeviceIndex·BatIndex 사용 |
-| 10. Module.xlsx | V1 | ST_ModulePublish_V1, 인덱스3·온도3·셀전압20 |
+| 10. Module.xlsx | V1 | ST_ModulePublish_V1, 인덱스3·전압3·온도3·셀전압20 (116 B) |
 | 101.Config Project.xlsx | UPS_V1, COMMON_VALUE_TYPE | ST_UpsConfig_Rx, 필드19개 |
 | 103.Config BAT.xlsx | UPS_V1 | ST_BatConfig_Rx, DeviceId·SocMin REAL·SocMax REAL |
 | 105.Config Protection.xlsx | UPS_V1 | 기존 ST_ProtectionConfig_Rx와 일치 |
@@ -42,7 +46,7 @@
 | PMS → EMS | dgspms/ups/3/ups | UPS3개 | 40 + 3×228 = 724바이트 (2026-11-12 상태 칸 8개 추가, 196 → 228) |
 | PMS → EMS | dgspms/ups/3/bat | BAT3개 | 40 + 3×200 = 640바이트 |
 | PMS → EMS | dgspms/ups/3/rack | 랙30개 | 40 + 30×184 = 5560바이트 |
-| PMS → EMS | dgspms/ups/3/module | 모듈300개 | 40 + 300×104 = 31240바이트 |
+| PMS → EMS | dgspms/ups/3/module | 모듈300개 | 40 + 300×116 = 34840바이트 (현재 72개는 8,392 B) |
 | EMS → PMS | dgsems/ups/3/config/ups | 최대 UPS3개 | 64 + N×148, N=1~3 |
 | PMS → EMS | dgspms/ups/3/config/ups | UPS3개 수신 원본 echo | 64 + 3×148 = 508바이트 |
 | 양방향 | dgsems 또는 dgspms/ups/3/config/bat | BAT3개 기준 | 64 + 3×12 = 100바이트 |
