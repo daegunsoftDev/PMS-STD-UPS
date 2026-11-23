@@ -82,7 +82,7 @@ VAR_GLOBAL
 	   - 장비 읽기 주기: 기본 200 ms. 장비마다 바꾸려면 선언에 추가 → (i_nModuleId := 1, i_sName := 'PCS1', i_tReadPeriod := T#500MS)
 	   ================================================================ *)
 
-	(* ---------- 장비: 기존 PCS 시험 인스턴스는 보관만 하며 g_aipPcs에는 등록하지 않는다 ---------- *)
+	(* ---------- 장비: 기존 PCS 시험 인스턴스는 보관만 하며 g_aipPcs에는 등록하지 않는다 (명세 v2.42: 이 현장에는 PCS·계량기 없음, 통신 안 함) ---------- *)
 	g_fbPcs1		: FB_PlaspoPcs	:= (i_nModuleId := 1, i_sName := 'PCS1', i_sIpAddr := '192.168.0.120', i_nPort := 602);
 	g_fbPcs2		: FB_PcsSim		:= (i_nModuleId := 2, i_sName := 'PCS2');
 	// 가상 PCS로 되돌리려면: g_fbPcs1 : FB_PcsSim := (i_nModuleId := 1, i_sName := 'PCS1');  (g_fbRptPcs1·MAIN A_Report의 RawMap 줄도 같이 뺌)
@@ -184,7 +184,7 @@ VAR_GLOBAL
 	g_aipOutput	: ARRAY[1..GVL_PARAM.OUTPUT_COUNT] OF I_OutputRule;	// 보조 장비 출력 규칙
 	g_aipUnitRule	: ARRAY[1..GVL_PARAM.UNIT_RULE_COUNT] OF I_UnitLimitRule	:= [g_fbUnitLimit];	// 유닛 제한 (등록 설정 GVL_PERSIST.g_astUnitRuleReg). 1 = 사용자 한도 [9-21 수정 2026-11-04: 등록. 원래 빈 칸]
 	g_aipBatRule	: ARRAY[1..GVL_PARAM.BAT_RULE_COUNT] OF I_BatLimitRule	:= [g_fbSocLimit];	// 버스 제한 (g_astBatRuleReg). 1 = SOC 정책
-	g_aipCtrlMode1		: ARRAY[1..GVL_PARAM.CTRL_MODE_COUNT] OF I_ControlMode	:= [g_fbCmConstP1, g_fbCmSchedule1, g_fbCmPeakCut1, g_fbCmSchedPeak1, g_fbCmStdSched1];	// 접속점 그룹 1 제어 모드 (칸 번호 = g_fbCtrlMode1.i_nModeReq). MAIN A_PassModuleSet이 관리자에 넘김 [16번 수정 2026-11-09: g_aipCtrlMode2 없앰]
+	g_aipCtrlMode1		: ARRAY[1..GVL_PARAM.CTRL_MODE_COUNT] OF I_ControlMode;	// 접속점 그룹 1 제어 모드 (칸 번호 = g_fbCtrlMode1.i_nModeReq). 명세 v2.42: PCS 없는 UPS 현장이라 등록하지 않음 (골라도 BadSlot 거절). 쓰려면 := [g_fbCmConstP1, g_fbCmSchedule1, g_fbCmPeakCut1, g_fbCmSchedPeak1, g_fbCmStdSched1]
 	g_aipSelectPolicy	: ARRAY[1..GVL_PARAM.GROUP_COUNT] OF I_SelectPolicy;	// 그룹별 지령원 고르기 정책. 비우면 코어 기본 (g_astGroupSet eSelP·eSelQ)
 	g_aipDistPolicy		: ARRAY[1..GVL_PARAM.GROUP_COUNT] OF I_DistPolicy;		// 그룹별 분배 정책. 비우면 코어 기본 (g_astGroupSet eDistBasis)
 	g_ipAutoGate		: I_Gate;		// Auto 지령 거르기. 비우면 코어 기본 (통과)
