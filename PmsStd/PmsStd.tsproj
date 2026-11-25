@@ -2,48 +2,6 @@
 <TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4024.78">
 	<DataTypes>
 		<DataType>
-			<Name GUID="{09BFE6C1-6F13-9F5C-FE36-A6CEC3226C09}" AutoDeleteType="true">ST_RedHeartbeat</Name>
-			<BitSize>128</BitSize>
-			<SubItem>
-				<Name>nProtoVer</Name>
-				<Type GUID="{18071995-0000-0000-0000-000000000005}">UINT</Type>
-				<Comment><![CDATA[ 형식 번호. 상대와 다르면 필드 뜻이 다름]]></Comment>
-				<BitSize>16</BitSize>
-				<BitOffs>0</BitOffs>
-				<Default>
-					<Value>2</Value>
-				</Default>
-			</SubItem>
-			<SubItem>
-				<Name>nCounter</Name>
-				<Type GUID="{18071995-0000-0000-0000-000000000008}">UDINT</Type>
-				<Comment><![CDATA[ 보낼 때마다 1 증가. 상대가 이 값이 바뀌는지로 살아 있음을 봄]]></Comment>
-				<BitSize>32</BitSize>
-				<BitOffs>32</BitOffs>
-			</SubItem>
-			<SubItem>
-				<Name>nRole</Name>
-				<Type GUID="{18071995-0000-0000-0000-000000000006}">INT</Type>
-				<Comment><![CDATA[ 보낸 PLC의 역할 (E_RedRole)]]></Comment>
-				<BitSize>16</BitSize>
-				<BitOffs>64</BitOffs>
-			</SubItem>
-			<SubItem>
-				<Name>bActive</Name>
-				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
-				<Comment><![CDATA[ 보낸 PLC가 지금 장비에 쓰는가 (GVL_IF.g_bRedActive)]]></Comment>
-				<BitSize>8</BitSize>
-				<BitOffs>80</BitOffs>
-			</SubItem>
-			<SubItem>
-				<Name>nState</Name>
-				<Type GUID="{18071995-0000-0000-0000-000000000006}">INT</Type>
-				<Comment><![CDATA[ 보낸 PLC의 이중화 상태 (E_RedState). Primary가 Handover이면 Secondary가 Active를 내려놓음]]></Comment>
-				<BitSize>16</BitSize>
-				<BitOffs>96</BitOffs>
-			</SubItem>
-		</DataType>
-		<DataType>
 			<Name GUID="{A6BABD92-1EF6-EA48-291A-B1EC17A9A747}" AutoDeleteType="true">E_OpMode</Name>
 			<BitSize>16</BitSize>
 			<BaseType GUID="{18071995-0000-0000-0000-000000000006}">INT</BaseType>
@@ -1077,13 +1035,14 @@
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{D8979AA3-083A-F22B-3BE2-4EBE9E58F487}" AutoDeleteType="true">ST_UpsDesiredSet</Name>
+			<Name GUID="{A2D567BC-E923-295C-8CDE-29CFE1BB038B}" AutoDeleteType="true">ST_UpsDesiredSet</Name>
 			<Comment><![CDATA[ UPS 1대에 맞춰 둘 설정 보관값 (장치: UPS). 2026-11-05.
    기반 없음(신규). GVL_PERSIST.g_astUpsDesired에 두어 PMS 재시작 후에도 남는다.
    명세: C:\gil\UPS\명세서\UPS_명세서.md CF-UPS-02·03
    칸 0~11 = UPS Holding H50~H61 (FB_UpsConfigApply의 쓰기 대상과 같은 순서). 2026-11-16 7칸 → 12칸 (간헐충전 H57~H61, 명세 v2.14)
+   2026-11-25 12칸 → 14칸: 칸 12 = H7 부동 충전 전압, 13 = H10 충전 전류 (명세 v2.51)
    bTempCompOn·bTrickleOn = 시작·정지 명령으로 정한 켜짐 상태 (FB_UpsCommand가 씀, 2026-11-05 추가) ]]></Comment>
-			<BitSize>384</BitSize>
+			<BitSize>416</BitSize>
 			<SubItem>
 				<Name>bValid</Name>
 				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
@@ -1096,10 +1055,10 @@
 				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
 				<ArrayInfo>
 					<LBound>0</LBound>
-					<Elements>12</Elements>
+					<Elements>14</Elements>
 				</ArrayInfo>
 				<Comment><![CDATA[ 이 칸을 맞출지 (EMS is_available)]]></Comment>
-				<BitSize>96</BitSize>
+				<BitSize>112</BitSize>
 				<BitOffs>8</BitOffs>
 			</SubItem>
 			<SubItem>
@@ -1107,45 +1066,45 @@
 				<Type GUID="{18071995-0000-0000-0000-000000000004}">WORD</Type>
 				<ArrayInfo>
 					<LBound>0</LBound>
-					<Elements>12</Elements>
+					<Elements>14</Elements>
 				</ArrayInfo>
 				<Comment><![CDATA[ 맞출 원시값 (UPS 레지스터 값 그대로)]]></Comment>
-				<BitSize>192</BitSize>
-				<BitOffs>112</BitOffs>
+				<BitSize>224</BitSize>
+				<BitOffs>128</BitOffs>
 			</SubItem>
 			<SubItem>
 				<Name>nRxCount</Name>
 				<Type GUID="{18071995-0000-0000-0000-000000000008}">UDINT</Type>
 				<Comment><![CDATA[ 보관한 설정의 수신 누계 (참고용)]]></Comment>
 				<BitSize>32</BitSize>
-				<BitOffs>320</BitOffs>
+				<BitOffs>352</BitOffs>
 			</SubItem>
 			<SubItem>
 				<Name>bTempCompOn</Name>
 				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
 				<Comment><![CDATA[ 온도보상충전을 켜 둬야 함 (명령 4 → TRUE, 8 → FALSE)]]></Comment>
 				<BitSize>8</BitSize>
-				<BitOffs>352</BitOffs>
+				<BitOffs>384</BitOffs>
 			</SubItem>
 			<SubItem>
 				<Name>bTrickleOn</Name>
 				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
 				<Comment><![CDATA[ 간헐충전을 켜 둬야 함 (명령 1 → TRUE, 7 → FALSE). UPS 상태로 확인할 칸이 없어 복구는 하지 않음]]></Comment>
 				<BitSize>8</BitSize>
-				<BitOffs>360</BitOffs>
+				<BitOffs>392</BitOffs>
 			</SubItem>
 		</DataType>
 		<DataType>
-			<Name GUID="{20648CBA-4D9F-57F4-C430-5C0FB374141F}" AutoDeleteType="true">ST_RedSyncCfg</Name>
-			<BitSize>3840</BitSize>
+			<Name GUID="{A285C92D-D2D9-AE56-FEE7-84FC4424089D}" AutoDeleteType="true">ST_RedSyncCfg</Name>
+			<BitSize>4096</BitSize>
 			<SubItem>
 				<Name>nProtoVer</Name>
 				<Type GUID="{18071995-0000-0000-0000-000000000005}">UINT</Type>
-				<Comment><![CDATA[ 형식 번호 (2: UPS 항목 추가 v2.43, 3: 사고 대응 된 동작 v2.49. 두 PLC 프로그램이 달라 번호가 다르면 받은 값을 쓰지 않음)]]></Comment>
+				<Comment><![CDATA[ 형식 번호 (2: UPS 항목 추가 v2.43, 3: 사고 대응 된 동작 v2.49, 4: UPS 보관값 14칸·512 B 고정 v2.51. 두 PLC 프로그램이 달라 번호가 다르면 받은 값을 쓰지 않음)]]></Comment>
 				<BitSize>16</BitSize>
 				<BitOffs>0</BitOffs>
 				<Default>
-					<Value>3</Value>
+					<Value>4</Value>
 				</Default>
 			</SubItem>
 			<SubItem>
@@ -1299,13 +1258,13 @@
 			</SubItem>
 			<SubItem>
 				<Name>astUpsDesired</Name>
-				<Type GUID="{D8979AA3-083A-F22B-3BE2-4EBE9E58F487}">ST_UpsDesiredSet</Type>
+				<Type GUID="{A2D567BC-E923-295C-8CDE-29CFE1BB038B}">ST_UpsDesiredSet</Type>
 				<ArrayInfo>
 					<LBound>1</LBound>
 					<Elements>1</Elements>
 				</ArrayInfo>
 				<Comment><![CDATA[ UPS 설정 보관값 (GVL_PERSIST.g_astUpsDesired, 명세 RED-01 v2.43)]]></Comment>
-				<BitSize>384</BitSize>
+				<BitSize>416</BitSize>
 				<BitOffs>3424</BitOffs>
 			</SubItem>
 			<SubItem>
@@ -1313,7 +1272,7 @@
 				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
 				<Comment><![CDATA[ 사고·고장 대응 스위치 (GVL_PERSIST.g_bUpsSafetyRespEnable, 명세 RED-01 v2.43)]]></Comment>
 				<BitSize>8</BitSize>
-				<BitOffs>3808</BitOffs>
+				<BitOffs>3840</BitOffs>
 			</SubItem>
 			<SubItem>
 				<Name>awUpsRespDone</Name>
@@ -1324,7 +1283,60 @@
 				</ArrayInfo>
 				<Comment><![CDATA[ 사고 대응 된 동작 비트 (FB_UpsSafetyResponse.q_wDone, GVL_IF.g_awUpsRespDone). 설정이 아님: 대기 쪽이 기억만 함 (명세 RED-01 v2.49)]]></Comment>
 				<BitSize>16</BitSize>
-				<BitOffs>3824</BitOffs>
+				<BitOffs>3856</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>abSpare</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000001}">BYTE</Type>
+				<ArrayInfo>
+					<LBound>0</LBound>
+					<Elements>28</Elements>
+				</ArrayInfo>
+				<Comment><![CDATA[ 남는 자리: 전체를 512 B로 맞춤 (XAE EAP RedSyncCfg = ARRAY [0..511] OF BYTE). 위에 칸을 늘리면 이만큼 줄여 512 B 유지 (명세 RED-01 v2.51)]]></Comment>
+				<BitSize>224</BitSize>
+				<BitOffs>3872</BitOffs>
+			</SubItem>
+		</DataType>
+		<DataType>
+			<Name GUID="{09BFE6C1-6F13-9F5C-FE36-A6CEC3226C09}" AutoDeleteType="true">ST_RedHeartbeat</Name>
+			<BitSize>128</BitSize>
+			<SubItem>
+				<Name>nProtoVer</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000005}">UINT</Type>
+				<Comment><![CDATA[ 형식 번호. 상대와 다르면 필드 뜻이 다름]]></Comment>
+				<BitSize>16</BitSize>
+				<BitOffs>0</BitOffs>
+				<Default>
+					<Value>2</Value>
+				</Default>
+			</SubItem>
+			<SubItem>
+				<Name>nCounter</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000008}">UDINT</Type>
+				<Comment><![CDATA[ 보낼 때마다 1 증가. 상대가 이 값이 바뀌는지로 살아 있음을 봄]]></Comment>
+				<BitSize>32</BitSize>
+				<BitOffs>32</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>nRole</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000006}">INT</Type>
+				<Comment><![CDATA[ 보낸 PLC의 역할 (E_RedRole)]]></Comment>
+				<BitSize>16</BitSize>
+				<BitOffs>64</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>bActive</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000030}">BOOL</Type>
+				<Comment><![CDATA[ 보낸 PLC가 지금 장비에 쓰는가 (GVL_IF.g_bRedActive)]]></Comment>
+				<BitSize>8</BitSize>
+				<BitOffs>80</BitOffs>
+			</SubItem>
+			<SubItem>
+				<Name>nState</Name>
+				<Type GUID="{18071995-0000-0000-0000-000000000006}">INT</Type>
+				<Comment><![CDATA[ 보낸 PLC의 이중화 상태 (E_RedState). Primary가 Handover이면 Secondary가 Active를 내려놓음]]></Comment>
+				<BitSize>16</BitSize>
+				<BitOffs>96</BitOffs>
 			</SubItem>
 		</DataType>
 		<DataType>
@@ -1414,12 +1426,12 @@
 			</ArrayInfo>
 		</DataType>
 		<DataType>
-			<Name GUID="{22FEA0BB-4AF4-309E-8916-DC20370CF26C}" IecBaseType="true" AutoDeleteType="true">ARRAY [0..479] OF BYTE</Name>
-			<BitSize>3840</BitSize>
+			<Name GUID="{9C0ECEA6-81C7-5959-96DA-890BBCA6DA45}" IecBaseType="true" AutoDeleteType="true">ARRAY [0..511] OF BYTE</Name>
+			<BitSize>4096</BitSize>
 			<BaseType GUID="{18071995-0000-0000-0000-000000000001}">BYTE</BaseType>
 			<ArrayInfo>
 				<LBound>0</LBound>
-				<Elements>480</Elements>
+				<Elements>512</Elements>
 			</ArrayInfo>
 		</DataType>
 		<DataType>
@@ -1871,11 +1883,15 @@
 		</System>
 		<Plc>
 			<Project GUID="{F6DC6991-4D29-4407-8E00-5D3363987721}" Name="PmsStd" PrjFilePath="PmsStd\PmsStd.plcproj" TmcFilePath="PmsStd\PmsStd.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PmsStd\PmsStd.tmc" TmcHash="{6D3A862F-B331-5218-A023-77005738025C}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PmsStd\PmsStd.tmc" TmcHash="{FD263D59-4E53-B34A-CFD5-F3D94768A9CD}">
 					<Name>PmsStd Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">
 						<Name>RedundancyTask Inputs</Name>
+						<Var>
+							<Name>PRG_Redundancy.fbRedSync._stRx</Name>
+							<Type GUID="{A285C92D-D2D9-AE56-FEE7-84FC4424089D}">ST_RedSyncCfg</Type>
+						</Var>
 						<Var>
 							<Name>PRG_Redundancy.fbRedLink._stRx</Name>
 							<Type GUID="{09BFE6C1-6F13-9F5C-FE36-A6CEC3226C09}">ST_RedHeartbeat</Type>
@@ -1895,13 +1911,14 @@
 							<Comment><![CDATA[ EL1004 채널 2]]></Comment>
 							<Type>BOOL</Type>
 						</Var>
-						<Var>
-							<Name>PRG_Redundancy.fbRedSync._stRx</Name>
-							<Type GUID="{20648CBA-4D9F-57F4-C430-5C0FB374141F}">ST_RedSyncCfg</Type>
-						</Var>
 					</Vars>
 					<Vars VarGrpType="2" AreaNo="1">
 						<Name>RedundancyTask Outputs</Name>
+						<Var>
+							<Name>PRG_Redundancy.fbRedSync._stTx</Name>
+							<Comment><![CDATA[ I/O: XAE에서 연결 ]]></Comment>
+							<Type GUID="{A285C92D-D2D9-AE56-FEE7-84FC4424089D}">ST_RedSyncCfg</Type>
+						</Var>
 						<Var>
 							<Name>PRG_Redundancy.fbRedLink._stTx</Name>
 							<Comment><![CDATA[ I/O: XAE에서 연결 ]]></Comment>
@@ -1916,11 +1933,6 @@
 							<Name>PRG_Redundancy.fbRedLink._bDoActive</Name>
 							<Comment><![CDATA[ EL2004 채널 2]]></Comment>
 							<Type>BOOL</Type>
-						</Var>
-						<Var>
-							<Name>PRG_Redundancy.fbRedSync._stTx</Name>
-							<Comment><![CDATA[ I/O: XAE에서 연결 ]]></Comment>
-							<Type GUID="{20648CBA-4D9F-57F4-C430-5C0FB374141F}">ST_RedSyncCfg</Type>
 						</Var>
 					</Vars>
 					<Vars VarGrpType="1" ContextId="2" AreaNo="32">
@@ -2109,7 +2121,7 @@
 								</Var>
 							</Vars>
 						</EapVar>
-						<EapVar Id="2" NvId="2" NvLength="480">
+						<EapVar Id="2" NvId="2" NvLength="512">
 							<Name>RedSyncCfg</Name>
 							<ImageId>98</ImageId>
 							<Vars VarGrpType="1">
@@ -2136,7 +2148,7 @@
 								</Var>
 								<Var>
 									<Name>VarData</Name>
-									<Type GUID="{22FEA0BB-4AF4-309E-8916-DC20370CF26C}">ARRAY [0..479] OF BYTE</Type>
+									<Type GUID="{9C0ECEA6-81C7-5959-96DA-890BBCA6DA45}">ARRAY [0..511] OF BYTE</Type>
 									<BitOffs>240</BitOffs>
 								</Var>
 							</Vars>
@@ -2165,7 +2177,7 @@
 0x0004 = Subscriber missing (Unicast only)
 ]]></Comment>
 							<Type>UINT</Type>
-							<BitOffs>4080</BitOffs>
+							<BitOffs>4336</BitOffs>
 						</Var>
 					</Vars>
 					<Vars VarGrpType="2">
@@ -2190,7 +2202,7 @@
 									<Comment><![CDATA[0x0001 = Not sent (variable skipped)
 ]]></Comment>
 									<Type>UINT</Type>
-									<BitOffs>4096</BitOffs>
+									<BitOffs>4352</BitOffs>
 								</Var>
 							</Vars>
 							<Vars VarGrpType="2">
@@ -2209,7 +2221,7 @@
 								</Var>
 							</Vars>
 						</EapVar>
-						<EapVar Id="2" VarInOut="1" NvId="2" NvLength="480">
+						<EapVar Id="2" VarInOut="1" NvId="2" NvLength="512">
 							<Name>RedSyncCfg</Name>
 							<ImageId>97</ImageId>
 							<Vars VarGrpType="1">
@@ -2219,7 +2231,7 @@
 									<Comment><![CDATA[0x0001 = Not sent (variable skipped)
 ]]></Comment>
 									<Type>UINT</Type>
-									<BitOffs>4112</BitOffs>
+									<BitOffs>4368</BitOffs>
 								</Var>
 							</Vars>
 							<Vars VarGrpType="2">
@@ -2233,7 +2245,7 @@
 								</Var>
 								<Var>
 									<Name>VarData</Name>
-									<Type GUID="{22FEA0BB-4AF4-309E-8916-DC20370CF26C}">ARRAY [0..479] OF BYTE</Type>
+									<Type GUID="{9C0ECEA6-81C7-5959-96DA-890BBCA6DA45}">ARRAY [0..511] OF BYTE</Type>
 									<BitOffs>224</BitOffs>
 								</Var>
 							</Vars>

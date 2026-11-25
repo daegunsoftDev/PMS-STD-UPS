@@ -97,6 +97,7 @@ q_stUps.UPS_ModeStatus.11 := i_stState.wRectAlarm.15; // VSM 모드 (I45 b15)
 q_stUps.UPS_ModeStatus.12 := i_stState.wRectAlarm.8; // Regen 모드 (I45 b8, b6과 같은 비트)
 
 q_stUps.MCCB_Status := SHR(WORD_TO_UDINT(i_stState.wStatus1), 1) AND 16#3F; // I50 b1~b6 → b0~b5 (b5 Out C/B는 1이 개방)
+q_stUps.MCCB_Status.6 := i_stState.wOpCode.3; // 배터리 MCCB Trip (H11 OP-CODE b3, 1 = Trip, 세방 회신 2026-11-25, 명세 RD-UPS-01 v2.50)
 
 q_stUps.RectStatus := 0;
 q_stUps.RectStatus.0 := i_stState.bRectOn; // 정류부 기동 (I45 b11)

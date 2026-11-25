@@ -80,7 +80,7 @@ VAR CONSTANT
 	ORDER			: ARRAY[0..5] OF INT := [0, 1, 2, 5, 3, 4];
 	// SQ-01 원인 비트
 	C_BMS_MINOR		: UDINT := 16#00000004;	// b2
-	C_BBC_GROUP		: UDINT := 16#00000388;	// b3 BMS Major, b7 RCD1, b8 BBC 중고장, b9 RCD2
+	C_BBC_GROUP		: UDINT := 16#00000388;	// b3 BMS Major, b7 지락(RCD)1, b8 BBC 중고장, b9 지락(RCD)2
 	C_RECT			: UDINT := 16#00000010;	// b4 입력·정류부 중고장
 	C_INV			: UDINT := 16#00002060;	// b5 출력, b6 인버터 중고장, b13 MBS C/B Fail → 바이패스 절체
 	C_INV_STOP		: UDINT := 16#00002060;	// b5, b6, b13 MBS: 맵 '인버터정지 To Bypass' → 절체 확인 뒤 인버터 정지 (화재는 v2.31부터 ESD처럼)

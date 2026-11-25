@@ -5,6 +5,8 @@
 TYPE ST_UpsConfig_Rx :
 STRUCT
 	DeviceId : UDINT; // UPS 번호 1~3
+	FloatChargeSetVoltage : ST_CommonConfig_REAL; // H7 Batt 부동 충전 전압 (V, 명세 CF-UPS-01 v2.51)
+	ChargeSetCurrentLimit : ST_CommonConfig_REAL; // H10 Batt 충전 전류 제한값 (A, 명세 CF-UPS-01 v2.51)
 	TrickleChargeSetParameter : ST_CommonConfig_UDINT; // H57 기준 선택
 	TrickleChargeSetStartVoltage : ST_CommonConfig_REAL; // H58 재충전 시작 전압
 	TrickleChargeSetEndVoltage : ST_CommonConfig_REAL; // H59 종료 전압

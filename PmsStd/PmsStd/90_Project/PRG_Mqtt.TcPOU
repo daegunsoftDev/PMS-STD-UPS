@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.16">
   <POU Name="PRG_Mqtt" Id="{f490f7e5-04af-4e69-bfbc-6f5bded239c4}" SpecialFunc="None">
     <Declaration><![CDATA[PROGRAM PRG_Mqtt		// MqttTask에서 부름. 보고 올리기·명령 받기 (MQTT 담당자 영역)
 (* - MAIN의 FB나 GVL_SITE·GVL_PERSIST를 직접 읽거나 쓰지 않는다 (GVL_SITE 상수 TEST_MODE·MQTT_SET만 읽음). 주고받기는 GVL_IF만
@@ -217,6 +217,7 @@ END_FOR]]></ST>
     <LineIds Name="PRG_Mqtt">
       <LineId Id="3" Count="155" />
       <LineId Id="2" Count="0" />
+      <LineId Id="160" Count="20" />
     </LineIds>
   </POU>
-</TcPlcObject>
+</TcPlcObject>

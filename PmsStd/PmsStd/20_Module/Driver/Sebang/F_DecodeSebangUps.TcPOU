@@ -68,5 +68,6 @@ F_DecodeSebangUps.bTemperatureEnabled := i_stRaw.awInput[51].2;
 F_DecodeSebangUps.bBmsMinor := i_stRaw.awInput[51].10;
 F_DecodeSebangUps.bBmsMajor := i_stRaw.awInput[51].11;
 F_DecodeSebangUps.bEmergencyStop := i_stRaw.awInput[50].0;
-FOR n:=0 TO 7 DO F_DecodeSebangUps.awAlarmStatus[n]:=i_stRaw.awInput[n+44]; END_FOR]]></ST></Implementation></POU>
+FOR n:=0 TO 7 DO F_DecodeSebangUps.awAlarmStatus[n]:=i_stRaw.awInput[n+44]; END_FOR
+F_DecodeSebangUps.wOpCode := i_stRaw.awParam[11]; // H11 OP-CODE (b3 Batt CB Trip, 명세 RD-UPS-01 v2.50)]]></ST></Implementation></POU>
 </TcPlcObject>

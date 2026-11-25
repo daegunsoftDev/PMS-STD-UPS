@@ -71,7 +71,7 @@ _bClearRequest := FALSE;
 _nNewFault := 0;
 _bDataOk := i_stUps.bValid AND i_stBms.bValid;
 // 동작시퀀스 7쪽 3~6단계: UPS·BMS가 배터리 컨버터 정지·MCCB Trip·컨택터 차단을 하는 상황. 어느 단계에서든 즉시 고장, 자동 재개 없음
-// 비상정지(6), BMS Major(3), STATUS2 b12·b13 RCD 1·2단계(3·4, 지락 아님 v2.29), b14 화재(5), BBC 정지 알람(4), BMS 고장·잠금(5)
+// 비상정지(6), BMS Major(3), STATUS2 b12·b13 지락(RCD) 1·2단계(3·4, 명세 v2.50), b14 화재(5), BBC 정지 알람(4), BMS 고장·잠금(5)
 _bProtTrip := (i_stUps.bValid AND (i_stUps.bEmergencyStop OR i_stUps.bBmsMajor
 		OR (i_stUps.wStatus2 AND 16#7000) <> 0 OR (i_stUps.wBbcAlarm AND 16#0FA8) <> 0))
 	OR (i_stBms.bValid AND (i_stBms.bFault OR i_stBms.bSystemLock));

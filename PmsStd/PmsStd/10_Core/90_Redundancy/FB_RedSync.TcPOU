@@ -37,7 +37,7 @@ END_VAR]]></Declaration>
 END_IF
 
 (* 1) 보내기 *)
-_stTx.nProtoVer	:= 3;	// 명세 RED-01 v2.49
+_stTx.nProtoVer	:= 4;	// 명세 RED-01 v2.51 (v2.49: 3)
 _stTx.nSeq		:= _stTx.nSeq + 1;
 _stTx.nModeReq1	:= GVL_SITE.g_fbCtrlMode1.i_nModeReq;
 _stTx.aeOpMode := GVL_PERSIST.g_aeOpMode;
@@ -63,7 +63,7 @@ _stTx.awUpsRespDone := GVL_IF.g_awUpsRespDone;	// 명세 RED-01 v2.49 (MAIN이 �
 bNew := _stRx.nSeq <> _nLastSeq;
 _nLastSeq := _stRx.nSeq;
 _tonFresh(IN := NOT bNew, PT := i_tTimeout);
-q_bFresh := _stRx.nProtoVer = 3 AND _stRx.nSeq <> 0 AND NOT _tonFresh.Q;
+q_bFresh := _stRx.nProtoVer = 4 AND _stRx.nSeq <> 0 AND NOT _tonFresh.Q;
 
 (* 3) 맞추기: 내가 Active가 아니고 상대가 Active일 때만 다른 것만 덮어씀 *)
 q_bInSync := FALSE;

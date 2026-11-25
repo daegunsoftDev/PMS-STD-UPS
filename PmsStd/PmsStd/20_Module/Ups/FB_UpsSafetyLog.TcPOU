@@ -70,7 +70,7 @@ VAR CONSTANT
 	CAUSE_STAGE		: ARRAY[0..12] OF UINT := [1, 1, 2, 3, 3, 3, 3, 3, 4, 4, 5, 5, 6];	// FB_UpsSafetyStage와 같음
 	CAUSE_NAME		: ARRAY[0..12] OF WSTRING(31) := [
 		"SPD", "UPS 경고장", "BMS Minor", "BMS Major", "입력·정류부 중고장", "출력 중고장", "인버터 중고장",
-		"RCD 1단계", "배터리 컨버터 중고장", "RCD 2단계", "BMS Level 3", "화재", "ESD"];
+		"지락(RCD) 1단계", "배터리 컨버터 중고장", "지락(RCD) 2단계", "BMS Level 3", "화재", "ESD"];
 	(* 대응 동작 이름 = FB_UpsSafetyResponse 동작 번호 순서 (명세 SQ-05) *)
 	RESP_NAME		: ARRAY[0..5] OF WSTRING(39) := [
 		"충전 컨택터 열기(BMS 40014=0)", "BMS 컨택터 전부 열기(40013~15=0)", "바이패스 절체(H109)",

@@ -53,9 +53,9 @@ VAR CONSTANT
 		3,	// b4  UPS 입력·정류부 중고장 (I44·I45)
 		3,	// b5  UPS 출력 중고장 (I47)
 		3,	// b6  UPS 인버터 중고장 (I48)
-		3,	// b7  RCD 1단계 (I51 b12). 지락 1단계 아님, 대응이 같아 3단계 (명세 v2.29)
+		3,	// b7  배터리 DC 전로 지락(RCD) 1단계 (I51 b12, 명세 v2.50 세방 회신)
 		4,	// b8  배터리 컨버터(BBC) 중고장 (I46)
-		4,	// b9  RCD 2단계 (I51 b13). 지락 2단계 아님, 대응이 같아 4단계 (명세 v2.29)
+		4,	// b9  배터리 DC 전로 지락(RCD) 2단계 (I51 b13, 명세 v2.50 세방 회신)
 		5,	// b10 BMS Level 3 (BAT Status b9 System Lock)
 		5,	// b11 화재 (I51 b14)
 		6];	// b12 ESD (I50 b0)
@@ -68,8 +68,8 @@ VAR CONSTANT
 	F2_INVERTER		: UDINT := 16#00001FC0;	// Fault2 b6~b12 인버터 (I48)
 	F2_ESD			: UDINT := 16#00002000;	// Fault2 b13 Emergency Stop (I50 b0). b14 MBS C/B Fail (I50 b7)은 단계 없음
 	F2_BMS_MAJOR	: UDINT := 16#00008000;	// Fault2 b15 BMS Major (I51 b11)
-	F2_RCD1			: UDINT := 16#00010000;	// Fault2 b16 RCD 1단계 (I51 b12)
-	F2_RCD2			: UDINT := 16#00020000;	// Fault2 b17 RCD 2단계 (I51 b13)
+	F2_RCD1			: UDINT := 16#00010000;	// Fault2 b16 지락(RCD) 1단계 (I51 b12)
+	F2_RCD2			: UDINT := 16#00020000;	// Fault2 b17 지락(RCD) 2단계 (I51 b13)
 	F2_FIRE			: UDINT := 16#00040000;	// Fault2 b18 화재 (I51 b14)
 	(* 대응 원인 (SQ-05 v2.30, 세방 맵 Alarm Flag 정류부·배터리컨버터·인버터 칸) *)
 	F1_START_BLOCK	: UDINT := 16#00040080;	// Fault1 b7 입력 상회전 (I44 b7), b18 Pre Magnet Fail (I45 b9): 맵 '기동 안 됨' → 명령 없음

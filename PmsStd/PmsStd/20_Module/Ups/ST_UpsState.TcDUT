@@ -74,6 +74,7 @@ STRUCT
 	bBmsMajor : BOOL; // BMS 중고장
 	bEmergencyStop : BOOL; // 비상 정지
 	awAlarmStatus : ARRAY[0..7] OF WORD; // 주소 44~51 알람·상태 묶음
+	wOpCode : WORD; // H11 OP-CODE (설정값, Read Only). b3 Batt CB Trip = 배터리 MCCB Trip (명세 RD-UPS-01 v2.50)
 
 // 프로그램 상태
 	bComm : BOOL; // 통신 정상
