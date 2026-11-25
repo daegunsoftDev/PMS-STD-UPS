@@ -22,7 +22,10 @@
      인버터 → BBC → 정류부 순으로 연달아 보낸다
    - i_bEnable(전체 스위치 AND 쓰기 관문)이 꺼지면 모두 처음 상태로
    - UPS 명령은 i_ipUps로 직접 보낸다. BMS 명령은 q_eBmsReq(그 스캔만)로 내고 MAIN이 드라이버를 부른다
-   - 복귀(다시 켜기), MCCB Trip, 바이패스 포함 출력 차단, BMS E-stop은 하지 않는다 *)
+   - 복귀(다시 켜기), MCCB Trip, 바이패스 포함 출력 차단, BMS E-stop은 하지 않는다
+   변경: 2026-11-25 이중화 절체 때 상대의 된 동작 기억을 이어받음 (명세 RED-01·SQ-05 v2.49): i_bInheritLoad 때 i_wInheritDone을 담아 두고,
+         그 동작이 필요해지면 보내지 않고 '됨'으로 둠 (사람이 다시 켠 것을 되돌리지 않음). 쓰기 허가·UPS 읽기 뒤 i_tInheritSettle 동안 안 쓰인 비트와
+         i_tInheritMax가 지난 비트는 버림 *)
 VAR_INPUT
 	i_bEnable		: BOOL;					// GVL_PERSIST.g_bUpsSafetyRespEnable AND 장비 쓰기 관문
 	i_nCause		: UDINT;				// FB_UpsSafetyStage.q_nRespCause (대응 원인, v2.30)
@@ -32,6 +35,10 @@ VAR_INPUT
 	i_ipUps			: I_Ups;				// UPS 명령 대상
 	i_tResend		: TIME := T#2S;			// 보낸 뒤 다시 보내기까지 (응답 대기 1초 + 쉼 1초)
 	i_tFail			: TIME := T#10S;		// 이 시간 넘게 안 되면 오류 표시 (보내기는 계속)
+	i_bInheritLoad	: BOOL;					// 이 스캔에 이어받을 기억을 담음 (이중화: 이 PLC가 Active가 되는 순간, 명세 RED-01 v2.49)
+	i_wInheritDone	: WORD;					// 이어받을 된 동작 비트 (대기 중 받은 상대의 q_wDone)
+	i_tInheritSettle: TIME := T#3S;			// 쓰기 허가 + UPS 읽기 뒤 이 시간 동안 필요해지지 않은 이어받은 비트는 버림
+	i_tInheritMax	: TIME := T#30S;		// 이어받은 비트는 담은 뒤 이 시간이 지나면 버림
 END_VAR
 VAR_OUTPUT
 	q_wNeeded		: WORD;					// 지금 필요한 동작 (비트 0~5)
@@ -42,6 +49,7 @@ VAR_OUTPUT
 	q_anTry			: ARRAY[0..5] OF UINT;	// 동작별 보낸 횟수 (드라이버가 받은 것만, 65535에서 멈춤)
 	q_bEsd			: BOOL;					// ESD·화재 대응 중 (순서 기다리지 않음, 바이패스 절체 안 함, v2.31 화재 포함)
 	q_bBypassBlocked : BOOL;				// 바이패스 이상이라 바이패스 절체를 보내지 않는 중 (기록 BypassBlocked, v2.31)
+	q_wInherit		: WORD;					// 아직 쓰지 않은 이어받은 된 동작 비트 (v2.49)
 END_VAR
 VAR
 	_anState		: ARRAY[0..5] OF UINT;	// 0 보낼 차례, 1 보낸 뒤 기다림, 2 됨
@@ -57,6 +65,9 @@ VAR
 	_wBit			: WORD;
 	_eCmd			: E_UpsCommand;
 	_bInvStopArmed	: BOOL;					// 인버터 정지 To Bypass: 바이패스가 확인돼 인버터 정지를 시작함 (원인이 사라질 때까지 유지)
+	_wInherit		: WORD;					// 이어받은 된 동작 비트 (쓰거나 버리면 지움, v2.49)
+	_tonInheritSettle : TON;
+	_tonInheritMax	: TON;
 END_VAR
 VAR CONSTANT
 	ACT_CHG_OPEN	: INT := 0;
@@ -79,7 +90,19 @@ VAR CONSTANT
 	BMS_SEQ_BASE	: UDINT := 16#7F000000;
 END_VAR]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// 0) 됐는지 (확인 신호를 믿을 수 없으면 안 된 것으로 봄)
+      <ST><![CDATA[// 이중화 이어받기 (명세 RED-01·SQ-05 v2.49): 담고, 오래되면 버림
+IF i_bInheritLoad THEN
+	_wInherit := i_wInheritDone AND 16#003F;
+	_tonInheritSettle(IN := FALSE);
+	_tonInheritMax(IN := FALSE);
+END_IF
+_tonInheritSettle(IN := _wInherit <> 0 AND i_bEnable AND i_bUpsValid, PT := i_tInheritSettle);
+_tonInheritMax(IN := _wInherit <> 0, PT := i_tInheritMax);
+IF _tonInheritSettle.Q OR _tonInheritMax.Q THEN
+	_wInherit := 0;
+END_IF
+
+// 0) 됐는지 (확인 신호를 믿을 수 없으면 안 된 것으로 봄)
 _abAchieved[ACT_CHG_OPEN] := i_stBms.bContactorFeedbackKnown AND NOT i_stBms.bChargeContactorClosed;
 _abAchieved[ACT_BMS_OPEN] := i_stBms.bContactorFeedbackKnown AND i_stBms.wSystemContactor = 0 AND i_stBms.wRackContactor = 0;
 _abAchieved[ACT_BYPASS] := i_bUpsValid AND i_stUps.BypassStatus.0;
@@ -104,7 +127,7 @@ IF i_bEnable THEN
 	// 인버터 정지 To Bypass (v2.30): 바이패스가 확인된 뒤에만 시작. 시작하면 원인이 사라질 때까지 유지
 	IF (i_nCause AND C_INV_STOP) = 0 THEN
 		_bInvStopArmed := FALSE;
-	ELSIF _abAchieved[ACT_BYPASS] THEN
+	ELSIF _abAchieved[ACT_BYPASS] OR (_wInherit AND SHL(WORD#1, ACT_INV_OFF)) <> 0 THEN	// v2.49: 인버터 정지를 이어받으면 바이패스 확인을 기다리지 않음
 		_bInvStopArmed := TRUE;
 	END_IF
 	IF _bInvStopArmed THEN q_wNeeded := q_wNeeded OR SHL(WORD#1, ACT_INV_OFF); END_IF
@@ -140,7 +163,10 @@ FOR _k := 0 TO 5 DO
 	ELSE
 		CASE _anState[_i] OF
 			0:	// 보낼 차례
-				IF _abAchieved[_i] THEN
+				IF (_wInherit AND _wBit) <> 0 THEN
+					_anState[_i] := 2;	// 상대가 이미 한 동작 (이중화 이어받기, v2.49): 다시 보내지 않음
+					_wInherit := _wInherit AND NOT _wBit;
+				ELSIF _abAchieved[_i] THEN
 					_anState[_i] := 2;	// 이미 그 상태
 				ELSIF _i = ACT_CHG_OPEN OR _i = ACT_BMS_OPEN THEN
 					IF q_eBmsReq = 0 THEN
@@ -187,7 +213,8 @@ q_wFailed := 0;
 FOR _i := 0 TO 5 DO
 	IF _anState[_i] = 2 THEN q_wDone := q_wDone OR SHL(WORD#1, _i); END_IF
 	IF _atonFail[_i].Q THEN q_wFailed := q_wFailed OR SHL(WORD#1, _i); END_IF
-END_FOR]]></ST>
+END_FOR
+q_wInherit := _wInherit;]]></ST>
     </Implementation>
   </POU>
 </TcPlcObject>

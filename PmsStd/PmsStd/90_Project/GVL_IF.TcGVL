@@ -59,6 +59,8 @@
 	g_bSyncInSync		: BOOL;			// 상대 Active의 설정과 내 설정이 같음 (내가 Active가 아닐 때만 TRUE). 복귀 조건
 	g_bSyncFresh		: BOOL;			// 상대가 보낸 동기화 값이 낡지 않음
 	g_nSyncApplied		: UDINT;		// 상대 값으로 내 설정 블록을 덮어쓴 횟수
+	g_awUpsRespDone		: ARRAY[1..GVL_PARAM.UPS_COUNT] OF WORD;	// 이 PLC의 사고 대응 된 동작 비트 (MAIN이 씀, FB_RedSync가 보냄. 명세 RED-01 v2.49)
+	g_awPeerRespDone	: ARRAY[1..GVL_PARAM.UPS_COUNT] OF WORD;	// 대기 중 받은 상대(Active)의 된 동작 비트 (FB_RedSync가 씀, 넘겨받을 때 MAIN이 이어받음. v2.49)
 	g_nRedResumeCount	: UDINT;		// PLC가 멈췄다 이어진 횟수 (이 때 이중화 상태를 Init부터 다시 정함)
 	g_nRedSwitchCount	: UDINT;		// Active가 바뀐 횟수 (들어가거나 나옴)
 	g_eRedSwitch		: E_RedSwitch;	// Active가 바뀐 마지막 이유 (None/Start/PeerLost/Failback/Yield)

@@ -4,7 +4,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 판 | **v2.47 (초안)** |
+| 판 | **v2.49 (초안)** |
 | 대상 코드 | `C:\gil\UPS\UPSstd\PmsStd.sln` |
 | 작성 | 에너지기술부 길범석 |
 
@@ -82,6 +82,8 @@
 | v2.45 | 2026-11-23 | RED-02 | 대기 중인 PLC: 사고·고장 판정 마지막 값을 비움(넘겨받는 순간 옛 값으로 대응 명령 방지), 장비 통신장애 알람(CommLost, 보호 규칙 4) 안 띄움 (사용자 결정) |
 | v2.46 | 2026-11-23 | DV-04 (신규) | 읽기 주기: UPS 1초·BMS 1초는 한 바퀴(요청 여러 개 연달아) 기준, 랙 상세 100 ms마다 한 조각 (사용자 결정) |
 | v2.47 | 2026-11-23 | P-01~03, RD-UPS-02, RD-BAT-01·02, WR-UPS-01, O-10, DV-05·RD-FIRE-01·RD-TMP-01·RD-MQTT-01·RD-LOG-01·WR-GATE-01 (신규), 5장 | 빠지거나 낡은 곳 정리 (새 결정 없음, 코드·결정 그대로): 원칙을 C안·BAT 명령에 맞춤, eventMap 파일 이름, Auto OFF, O-10 해결, 현장 설정값·화재감지기·온습도·MQTT 공통·이벤트 로그·쓰기 관문 항목, 시험 환경 |
+| v2.48 | 2026-11-24 | RD-BAT-01·02 | 배터리 eventMap: 경고 비트 5개(Module Error b9 Cell V Imbalance Warning, Module Status b0·2·4·6 UV·OV·OT·UT Warning)를 Fault에서 빼 **Warning2 b0~4**로 옮김. Fault1 b16~25 = Module Error b0~8·10, Fault2 b16~20 = Module Status b1·3·5·7·8 (사용자 수정, 공유 드라이브 구글 시트 '002.이솔루션' 2026-11-24). 레코드 크기 그대로 |
+| v2.49 | 2026-11-25 | RED-01, SQ-05 | 이중화: 사고 대응 '된 동작' 기억을 EAP로 넘김. 넘겨받은 PLC가 사람이 다시 켠 장비를 다시 끄지 않게 (사용자 결정). 형식 번호 2 → 3, 동기화 변수 크기 바뀜 (XAE EAP 배열 크기 같이 바꿈). 판정 값은 계속 넘기지 않음 (v2.45) |
 
 ---
 
@@ -181,9 +183,9 @@ UPS_ModeStatus 칸으로 보냅니다 (v2.11, RD-UPS-01 표).
 
 **시험 기준:** BAT Mode = 5 → UPS_ModeStatus b5 = 1, b0~b4 = 0
 
-### RD-BAT-01 RACK Warning·Fault 배치 — 잠정 (v2.37, 배터리 eventMap v2)
+### RD-BAT-01 RACK Warning·Fault 배치 — 잠정 (v2.48, 배터리 eventMap v2 + Warning2)
 
-배터리 eventMap `인터페이스\002.이솔루션.xlsx`(시트 하나: BAT A~F열, RACK H~M열, 같은 줄. 공유 드라이브 구글 시트 '002.이솔루션 v1'도 같은 양식)와 같은 자리로 보냅니다. EMS는 이 파일로 비트 이름을 띄웁니다.
+배터리 eventMap 공유 드라이브 구글 시트 **'002.이솔루션'**(시트 '이솔루션 1.4v' 하나: BAT A~F열, RACK H~M열, 같은 줄. 2026-11-24 사용자 수정본이 기준. 로컬 `인터페이스\002.이솔루션.xlsx`는 그 내보내기본, 시험 도구가 읽음)과 같은 자리로 보냅니다. EMS는 이 파일로 비트 이름을 띄웁니다.
 
 S = 랙 상태 영역 시작(랙 1 = I90, 랙마다 +9), D = 랙 상세 영역 시작(랙 1 = I500, 랙마다 +500)
 
@@ -192,14 +194,15 @@ S = 랙 상태 영역 시작(랙 1 = I90, 랙마다 +9), D = 랙 상세 영역 �
 | 칸 | b0~15 | b16~31 |
 |---|---|---|
 | Warning1 | S+2 System Warning Status (b0~9) | S+0 System Alarm (b0~8) |
-| Fault1 | S+3 System Error Status (b0~13) | S+4 Module Error Status (b0~10, b9 Cell V Imbalance Warning 포함) |
-| Fault2 | S+7 Fire Alarm: b0 연기 센서, **b1** = 원래 b15 화재·연기 감지기 | S+8 Module Status (b16~24 = b0~8, 경고 비트 b0·2·4·6 포함) |
+| **Warning2 (v2.48)** | b0 = S+4 b9 Cell V Imbalance Warning, b1~4 = S+8 b0 UV·b2 OV·b4 OT·b6 UT Warning | (없음, 항상 0) |
+| Fault1 | S+3 System Error Status (b0~13) | S+4 Module Error Status: b16~25 = 원래 b0~8·10 (b9 경고는 Warning2) |
+| Fault2 | S+7 Fire Alarm: b0 연기 센서, **b1** = 원래 b15 화재·연기 감지기 | S+8 Module Status: b16~20 = 원래 b1·3·5·7·8 (UV·OV·OT·UT Error, AFE Error. 경고는 Warning2) |
 | Fault3 | D+11 System Lock Status 1: b0~8 = 원래 b0·1·3·6~11 | D+12 System Lock Status 2: b16~29 = 원래 b0·1·4~15 |
 | Fault4 | S+5 Error Code 1 (b0~15) | S+6 Error Code 2 (b0~7) |
 | Fault5 | D+13 Self Test Status 1 (b0~8) | D+14 Self Test Status 2: b16~30 = 원래 b0~10·12~15 |
-| Warning2~10, Fault6~10 | | 쓰지 않음 (항상 0) |
+| Warning3~10, Fault6~10 | | 쓰지 않음 (항상 0) |
 
-- Module Error b9(Cell V Imbalance Warning)와 Module Status 경고 비트(b0·2·4·6)는 그 워드째로 Fault 칸에 둡니다 (사용자 결정). 그래서 이 비트만 켜져도 RACK Status b6(고장)이 켜집니다.
+- **(v2.48, 사용자 결정)** Module Error b9(Cell V Imbalance Warning)와 Module Status 경고 비트(b0·2·4·6)는 Warning2에 둡니다. 이 비트만 켜지면 RACK Status b5(경고)만 켜지고 b6(고장)은 켜지지 않습니다. Warning2는 '워드 2개' 규칙의 예외로, 두 워드의 경고 비트를 b0부터 이어 붙입니다. (v2.37~v2.47에는 워드째로 Fault 칸에 두었음)
 - 랙 상세(D+11~14)는 그 랙 상세를 받은 뒤부터 채웁니다 (랙 상세는 100 ms마다 한 조각, 8랙 한 바퀴 약 3.2초라 최대 그만큼 늦음, DV-04 v2.46).
 - RACK Status b5 / b6 = 그 랙의 Warning / Fault 칸 중 하나라도 0이 아님.
 - BMS Minor / Major 판단은 이 칸으로 하지 않고 UPS 비트로 합니다 (SQ-01).
@@ -209,8 +212,9 @@ S = 랙 상태 영역 시작(랙 1 = I90, 랙마다 +9), D = 랙 상세 영역 �
 **시험 기준 (v2.37)**
 - 랙 3의 S+3 = 0x2000 → RACK[3] Fault1 = 0x00002000, RACK[3] Status b6 = 1, 다른 랙 영향 없음
 - 랙 1의 S+0 = 0xFFFF → Warning1 = 0x01FF0000, Status b5 = 1, b6 = 0. S+2 = 0xFFFF → Warning1 = 0x000003FF
-- 랙 1의 S+3 = S+4 = 0xFFFF → Fault1 = 0x07FF3FFF. S+7 = S+8 = 0xFFFF → Fault2 = 0x01FF0003
-- 랙 1의 S+4 = 0x0200만 → Fault1 = 0x02000000, Status b6 = 1
+- (v2.48) 랙 1의 S+3 = S+4 = 0xFFFF → Fault1 = 0x03FF3FFF, Warning2 = 0x00000001. S+7 = S+8 = 0xFFFF → Fault2 = 0x001F0003, Warning2 = 0x0000001E
+- (v2.48) 랙 1의 S+4 = 0x0200만 → Fault1 = 0, Warning2 = 0x00000001, Status b5 = 1, b6 = 0. S+4 = 0x0400 (AFE) → Fault1 = 0x02000000 (b25)
+- (v2.48) 랙 1의 S+8 = 0x0040 (UT Warning)만 → Warning2 = 0x00000010 (b4), Fault2 = 0, Status b5 = 1, b6 = 0. S+8 = 0x0080 (UT Error) → Fault2 = 0x00080000 (b19), Status b6 = 1
 - 랙 1 상세 받음, D+11 = D+12 = 0xFFFF → Fault3 = 0x3FFF01FF. D+13 = D+14 = 0xFFFF → Fault5 = 0x7FFF01FF
 - 랙 1 상세 받음, D+12 = 0x0400 (b10 CT1·CT2 전류 편차) → Fault3 = 0x01000000 (b24). S+7 = 0x8000 (화재) → Fault2 = 0x00000002 (b1)
 - 랙 1의 S+5 = S+6 = 0xFFFF → Fault4 = 0x00FFFFFF
@@ -218,7 +222,7 @@ S = 랙 상태 영역 시작(랙 1 = I90, 랙마다 +9), D = 랙 상세 영역 �
 
 ### RD-BAT-02 BAT Warning·Fault·Status — 잠정
 
-- BAT Warning1 / Fault1~5 = 8개 랙의 같은 칸을 OR로 합친 값 (배치는 RD-BAT-01과 같음, `002.이솔루션.xlsx` A~F열, v2.37)
+- BAT Warning1·Warning2 / Fault1~5 = 8개 랙의 같은 칸을 OR로 합친 값 (배치는 RD-BAT-01과 같음, 구글 시트 '002.이솔루션' A~F열, v2.48)
 - BAT Status b6 / b7 = BAT Warning / Fault 중 하나라도 0이 아님
 - BAT Status b9 Emergency = 어느 랙이든 System Lock(S+0 b8 또는 S+3 b13) = 1
 - BAT b8 Balancing, b10 E-stop, RACK b8 Precharge, b9 Balancing = 항상 0 (미지원)
@@ -232,6 +236,8 @@ S = 랙 상태 영역 시작(랙 1 = I90, 랙마다 +9), D = 랙 상세 영역 �
 - 랙 1 S+2 = 0x0001, 랙 2 S+2 = 0x0002 → BAT Warning1 = 0x0003
 
 **시험 기준 (v2.37):** 랙 3 D+11 = 0x0400 (상세 받음) → BAT Fault3 = 0x00000080 (b7). 랙 4 S+6 = 0x0004 → BAT Fault4 = 0x00040000 (b18)
+
+**시험 기준 (v2.48):** 랙 1 S+8 = 0x0001, 랙 2 S+4 = 0x0200 → BAT Warning2 = 0x00000003, BAT Status b6 = 1, b7 = 0
 
 ### RD-IMD-01 IMD 보고 — 잠정
 
@@ -664,6 +670,7 @@ PMS가 장비(UPS·BMS)에 쓰는 모든 것(EMS 명령, 설정 쓰기·복구, 
   - 드라이버가 못 받은 명령(바쁨·통신 끊김)은 2초를 기다리지 않고 다음 스캔(10 ms)에 다시 시도합니다. 보낸 횟수(`q_anTry`)는 드라이버가 받은 것만 셉니다.
   - 시간 값: `i_tResend` 2초, `i_tFail` 10초 (FB 입력 기본값).
 - 된 동작은 원인이 사라졌다가 다시 생길 때까지 다시 하지 않습니다. 사람이 현장에서 다시 켠 것을 PMS가 되돌려 끄지 않기 위해서입니다.
+- **(v2.49) 이중화 절체 때도 이 기억을 이어받습니다** (RED-01). 넘겨받은 PLC는 상대가 이미 한 동작을 '됨'으로 두고 다시 보내지 않습니다.
 - UPS 명령은 스캔마다 하나씩, 흐름도 순서대로 보냅니다: 바이패스 절체 → 인버터 정지(v2.30, 절체 확인 뒤) → BBC 정지 → 정류부 정지. **앞 동작이 되거나 오류(10초)가 뜨면** 다음 동작을 보냅니다. 오류가 뜬 앞 동작도 계속 보냅니다. BMS는 '전부 열기'가 필요하면 '충전 컨택터 열기'는 따로 하지 않습니다.
 - 스위치를 끄거나 쓰기 관문이 닫히면 진행 중인 동작을 모두 멈추고 처음 상태로 돌립니다.
 - **ESD (v2.18):** ESD는 UPS가 접점(I50 b0)으로 직접 멈추고, PMS는 백업입니다. 확인은 그대로 해서 UPS가 이미 끈 것은 보내지 않습니다.
@@ -710,15 +717,25 @@ PMS가 장비(UPS·BMS)에 쓰는 모든 것(EMS 명령, 설정 쓰기·복구, 
 
 PMS 제어기 2대(수집장치, 3차년도 구입)를 **프라이머리·세컨더리**로 씁니다. 평소에는 프라이머리가 동작하고(코어 상태 Active), 세컨더리는 대기합니다(Standby). 프라이머리가 죽으면 세컨더리가 넘겨받아 동작하고, 프라이머리가 돌아오면 다시 넘겨줍니다(코어 Handover). 아래 '동작 중인 쪽' = 지금 Active인 PLC입니다. 코어 이중화(`10_Core/90_Redundancy`, `PRG_Redundancy`)를 씁니다. **장비가 오기 전까지 `GVL_SITE.RED_SET.bUse = FALSE`** 그대로 둡니다.
 
-### RED-01 설정 동기화 — 잠정 (v2.43)
+### RED-01 설정 동기화 — 잠정 (v2.49)
 
 - 동작 중인 쪽이 운영 설정을 매 스캔 EAP 변수 하나(`ST_RedSyncCfg`)로 보내고, 대기 중인 쪽은 상대가 동작 중이고 통신이 정상일 때 **다른 값만** 덮어씁니다 (코어 `FB_RedSync`).
 - **UPS 항목 추가 (v2.43):** UPS 설정 보관값(`g_astUpsDesired`: EMS 설정 12칸, 온도보상·간헐충전 켜짐)과 사고 대응 스위치(`g_bUpsSafetyRespEnable`). 형식 번호(`nProtoVer`) 1 → 2: 두 PLC 프로그램이 다르면 받은 값을 낡은 것으로 보고 쓰지 않습니다.
 - 받은 값으로 설정을 바꾸면 바로 PERSISTENT 저장을 요청합니다 (CF-UPS-02와 같은 '바로 저장').
 - BMS 랙 선택표(`g_awBmsRackMask`)는 동기화하지 않습니다. 랙 명령은 BMS의 실제 랙 컨택터 상태(Input 30027)를 바탕으로 쓰기 때문입니다 (WR-BAT-01 v2.13).
 - 모듈 설정 묶음(`g_stModuleSet`)은 코어 규칙대로 동기화하지 않습니다 (HMI가 두 PLC에 씀).
+- **사고 대응 '된 동작' 기억 (v2.49, 사용자 결정):** 동작 중인 쪽이 UPS마다 된 동작 비트(`FB_UpsSafetyResponse.q_wDone`: b0 충전 컨택터 열기, b1 BMS 컨택터 전부 열기, b2 바이패스 절체, b3 BBC 정지, b4 정류부 정지, b5 인버터 정지)를 함께 보냅니다. 대기 중인 쪽은 상대가 동작 중이고 통신이 정상일 때 받은 값을 기억해 둡니다 (설정이 아니므로 저장·동기화 횟수에 넣지 않음).
+  - 이 PLC가 동작 중이 되는 순간(절체·복귀) 기억한 비트를 이어받습니다. 그 동작의 원인이 새로 읽은 값으로 다시 잡히면 '됨'으로 두고 명령을 보내지 않습니다. 인버터 정지(b5)를 이어받으면 바이패스 확인을 기다리지 않습니다.
+  - 이어받은 비트는 장비 쓰기가 허가되고 UPS를 읽기 시작한 뒤 3초 동안 원인이 안 잡히면 버립니다. 어떤 경우든 동작 중이 된 뒤 30초가 지나면 버립니다 (옛 기억이 나중에 새 고장을 막지 않게).
+  - 판정 값(SQ-01)은 계속 넘기지 않습니다 (v2.45). 과전류 지연 타이머(배터리 10분, 출력 15분)도 넘기지 않습니다 (절체 뒤 처음부터 셈).
+  - 형식 번호 2 → 3. 동기화 변수 크기가 바뀌므로 XAE의 EAP 변수(RedSyncCfg, Publisher·Subscriber)의 크기도 같이 바꿉니다.
 
 **시험 기준 (시험 PLC 2대 필요):** 프라이머리(동작 중) 보관값 H50 = 120, 세컨더리(대기) = 100 → 세컨더리 120으로 바뀌고 동기화 횟수 +1, 바로 저장 요청 / 같은 값 → 덮어쓰지 않음 / 프라이머리 스위치 FALSE → 세컨더리도 FALSE / 상대가 형식 번호 1(옛 프로그램) → 받은 값 낡음, 덮어쓰지 않음
+
+**시험 기준 (v2.49, 된 동작 이어받기)**
+- 프라이머리: 인버터 중고장(원인 b6) → 바이패스 절체 됨 → 사람이 인버터로 되돌림(원인 그대로). 프라이머리 정지 → 세컨더리가 넘겨받음 → 바이패스 절체 명령을 보내지 않음 (q_wDone b2 = 1)
+- 이어받은 비트가 있어도 넘겨받은 뒤 원인이 없음(3초) → 버림. 그 뒤 원인이 생기면 → 명령을 보냄
+- 이어받을 기억이 없음(상대가 아무것도 안 함) → 지금처럼 원인대로 명령
 
 ### RED-02 대기 중인 쪽 장비 읽기 — 확정 (v2.44, 사용자 결정)
 

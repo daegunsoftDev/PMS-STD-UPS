@@ -83,6 +83,7 @@ VAR
 	abBmsCtlAcc : ARRAY[1..GVL_PARAM.BMS_COUNT] OF BOOL; // 지난 스캔 컨택터 쓰기 요청을 드라이버가 받음
 	aeBmsCtlRes : ARRAY[1..GVL_PARAM.BMS_COUNT] OF E_UpsResult; // 지난 스캔 드라이버 결과
 	fbUpsSafetyResp : ARRAY[1..GVL_PARAM.UPS_COUNT] OF FB_UpsSafetyResponse; // 사고·고장 대응 동작 (명세 SQ-05, C안). 스위치 GVL_PERSIST.g_bUpsSafetyRespEnable
+	rtRedActive		: R_TRIG;	// 이중화: 이 PLC가 Active가 되는 순간 → 상대의 사고 대응 된 동작 기억을 이어받음 (명세 RED-01 v2.49)
 	stSafetyBmsCmd : ST_BatCmd; // 대응 동작의 BMS 전부 열기 명령 (M_SetStateCmd)
 	fbUpsSafety : ARRAY[1..GVL_PARAM.UPS_COUNT] OF FB_UpsSafetyStage; // 사고·고장 단계 판정 (UPS n ↔ BMS n). 표시만, 장비에 쓰지 않음
 	fbUpsSafetyLog : ARRAY[1..GVL_PARAM.UPS_COUNT] OF FB_UpsSafetyLog; // 사고·고장 단계 기록 (명세 SQ-01 v2.21) + 대응 동작 기록 (SQ-05 v2.22). PMS 이벤트 로그에만, EMS로는 안 보냄
@@ -260,9 +261,12 @@ FOR i:=1 TO GVL_PARAM.UPS_COUNT DO
 		iq_stDesired:=GVL_PERSIST.g_astUpsDesired[i]);
 END_FOR
 // 명세 SQ-05 사고·고장 대응 동작 (C안, 2026-11-17). 원인은 지난 스캔 단계 판정(A_Report의 fbUpsSafety). UPS 1 ↔ BMS 1
+rtRedActive(CLK:=GVL_SITE.RED_SET.bUse AND GVL_IF.g_bRedActive);	// 명세 RED-01 v2.49
 fbUpsSafetyResp[1](i_bEnable:=GVL_PERSIST.g_bUpsSafetyRespEnable AND bWriteEnable AND GVL_PARAM.UPS_CONTROL_ENABLED,
 	i_nCause:=fbUpsSafety[1].q_nRespCause, i_stUps:=fbRptUps[1].q_stUps, i_bUpsValid:=fbRptUps[1].q_bValid,	// 대응 원인 (SQ-05 v2.30)
-	i_stBms:=GVL_SITE.g_fbBms1.q_stState, i_ipUps:=GVL_SITE.g_aipUps[1]);
+	i_stBms:=GVL_SITE.g_fbBms1.q_stState, i_ipUps:=GVL_SITE.g_aipUps[1],
+	i_bInheritLoad:=rtRedActive.Q, i_wInheritDone:=GVL_IF.g_awPeerRespDone[1]);	// 넘겨받을 때 상대가 한 동작을 '됨'으로 (RED-01 v2.49)
+GVL_IF.g_awUpsRespDone[1]:=fbUpsSafetyResp[1].q_wDone;	// 대기 쪽에 보냄 (FB_RedSync, v2.49)
 CASE fbUpsSafetyResp[1].q_eBmsReq OF
 	1: GVL_SITE.g_fbBms1.M_SetControl(i_eControl:=E_EsolutionControl.ChargeContactor, i_bOn:=FALSE);	// 충전 컨택터 열기 (40014 = 0)
 	2: stSafetyBmsCmd.eCmd:=E_BatCmd.Open;	// 40013~40015 = 0

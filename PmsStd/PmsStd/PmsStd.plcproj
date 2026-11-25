@@ -1165,46 +1165,178 @@
       </XmlArchive>
     </PlcProjectOptions>
   </ProjectExtensions>
-  <ItemGroup><Compile Include="20_Module\Ups\E_UpsResult.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Sebang\E_UpsCommand.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Esolution\E_EsolutionOperation.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Sebang\ST_UpsRaw.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Ups\ST_UpsState.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Esolution\ST_EsolutionRaw.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Esolution\ST_EsolutionState.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Ups\F_UpsSignedWord.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Ups\F_UpsNextSeq.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Ups\FB_UpsConfigApply.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Ups\FB_UpsModbusJob.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Sebang\F_DecodeSebangUps.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Ups\I_Ups.TcIO"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Sebang\FB_SebangUps.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Esolution\FB_EsolutionBms.TcPOU"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Driver\Esolution\E_EsolutionControl.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Folder Include="20_Module\Ups" /></ItemGroup>
-  <ItemGroup><Folder Include="20_Module\Driver\Sebang" /></ItemGroup>
-  <ItemGroup><Folder Include="20_Module\Driver\Esolution" /></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Publish\ST_UpsPublish_V1.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Publish\ST_ModulePublish_V1.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Publish\ST_UpsPublishData.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Publish\ST_ModulePublishData.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Config\ST_UpsConfig_Rx.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Config\ST_UpsConfigWirePacket.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Config\ST_ScheduleWork_V1.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Config\ST_ScheduleHoliday_V1.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Config\ST_ScheduleDaily_V1.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\Config\ST_ScheduleWeekly_V1.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
-  <ItemGroup><Compile Include="20_Module\Mqtt\ST_IfUpsConfigRx.TcDUT"><SubType>Code</SubType></Compile></ItemGroup>
   <ItemGroup>
-    <Compile Include="20_Module\Ups\E_UpsChargeAction.TcDUT"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\E_UpsChargeMode.TcDUT"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\E_UpsChargeStep.TcDUT"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\FB_UpsChargeRequest.TcPOU"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\FB_UpsChargeSequence.TcPOU"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\FB_UpsTemperatureCharge.TcPOU"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\ST_UpsChargeFeedback.TcDUT"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\ST_UpsChargeRequest.TcDUT"><SubType>Code</SubType></Compile>
-    <Compile Include="20_Module\Ups\ST_UpsChargeSet.TcDUT"><SubType>Code</SubType></Compile>
+    <Compile Include="20_Module\Ups\E_UpsResult.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Sebang\E_UpsCommand.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Esolution\E_EsolutionOperation.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Sebang\ST_UpsRaw.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\ST_UpsState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Esolution\ST_EsolutionRaw.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Esolution\ST_EsolutionState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\F_UpsSignedWord.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\F_UpsNextSeq.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\FB_UpsConfigApply.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\FB_UpsModbusJob.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Sebang\F_DecodeSebangUps.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\I_Ups.TcIO">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Sebang\FB_SebangUps.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Esolution\FB_EsolutionBms.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Driver\Esolution\E_EsolutionControl.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="20_Module\Ups" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="20_Module\Driver\Sebang" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="20_Module\Driver\Esolution" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Publish\ST_UpsPublish_V1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Publish\ST_ModulePublish_V1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Publish\ST_UpsPublishData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Publish\ST_ModulePublishData.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Config\ST_UpsConfig_Rx.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Config\ST_UpsConfigWirePacket.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Config\ST_ScheduleWork_V1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Config\ST_ScheduleHoliday_V1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Config\ST_ScheduleDaily_V1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\Config\ST_ScheduleWeekly_V1.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Mqtt\ST_IfUpsConfigRx.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="20_Module\Ups\E_UpsChargeAction.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\E_UpsChargeMode.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\E_UpsChargeStep.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\FB_UpsChargeRequest.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\FB_UpsChargeSequence.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\FB_UpsTemperatureCharge.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\ST_UpsChargeFeedback.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\ST_UpsChargeRequest.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="20_Module\Ups\ST_UpsChargeSet.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="20_Module\Ups\FB_UpsSafetyStage.TcPOU">
       <SubType>Code</SubType>
     </Compile>

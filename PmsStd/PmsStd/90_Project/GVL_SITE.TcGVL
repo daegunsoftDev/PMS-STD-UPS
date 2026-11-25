@@ -57,9 +57,9 @@
 	(* 이중화: 두 PLC에 같은 프로그램. 역할(Primary/Secondary)은 이 PLC의 AMS Net ID로 정함 (PRG_Redundancy)
 	   이중화를 쓰면 bUse := TRUE, 두 PLC의 Net ID를 적음 (TwinCAT 시스템 화면 또는 온라인 PRG_Redundancy.sMyNetId) *)
 	RED_SET			: ST_RedSet := (
-						bUse			:= FALSE,
-						sPrimaryNetId	:= '',
-						sSecondaryNetId	:= '');
+						bUse			:= TRUE,						// 2026-11-24 이중화 장비 연결 (명세 4-2장 RED)
+						sPrimaryNetId	:= '10.1.177.153.1.1',	// UPS-P
+						sSecondaryNetId	:= '5.49.245.140.1.1');	// UPS-S
 
 	(* 로그 설정 *)
 	LOG_SET			: ST_LogSet := (

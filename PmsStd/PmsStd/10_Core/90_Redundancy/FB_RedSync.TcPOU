@@ -7,6 +7,7 @@
    - 맞추기: i_bApply일 때만, 값이 다른 것만 덮어씀 (같으면 안 씀: 저장을 불필요하게 만들지 않음). 바꾼 것이 없으면 q_bInSync
    - 살아 있음: _stRx.nSeq가 i_tTimeout 안에 바뀌어야 함 (q_bFresh)
    - 2026-11-23 UPS 항목 추가 (명세 RED-01 v2.43): UPS 설정 보관값·사고 대응 스위치. 형식 번호 2. BMS 랙 선택표는 동기화하지 않음 (실제 랙 상태로 씀)
+   - 2026-11-25 사고 대응 된 동작 비트 추가 (명세 RED-01 v2.49): 보내고, 대기 쪽은 GVL_IF.g_awPeerRespDone에 기억만 함 (설정 아님: 일치·횟수에 안 넣음). 형식 번호 3
    - I/O(AT %I*·%Q)는 설치할 때 XAE에서 연결. 인스턴스는 RedundancyTask의 PRG_Redundancy에 둠. 두 PLC 프로그램이 같아야 함 *)
 VAR_INPUT
 	i_bUse			: BOOL;
@@ -36,7 +37,7 @@ END_VAR]]></Declaration>
 END_IF
 
 (* 1) 보내기 *)
-_stTx.nProtoVer	:= 2;	// 명세 RED-01 v2.43
+_stTx.nProtoVer	:= 3;	// 명세 RED-01 v2.49
 _stTx.nSeq		:= _stTx.nSeq + 1;
 _stTx.nModeReq1	:= GVL_SITE.g_fbCtrlMode1.i_nModeReq;
 _stTx.aeOpMode := GVL_PERSIST.g_aeOpMode;
@@ -56,12 +57,13 @@ _stTx.stSeqSet := GVL_PERSIST.g_stSeqSet;
 _stTx.stBrokerWatch := GVL_PERSIST.g_stBrokerWatch;	// [9번 수정 2026-11-09: 추가]
 _stTx.astUpsDesired := GVL_PERSIST.g_astUpsDesired;	// 명세 RED-01 v2.43
 _stTx.bUpsSafetyRespEnable := GVL_PERSIST.g_bUpsSafetyRespEnable;
+_stTx.awUpsRespDone := GVL_IF.g_awUpsRespDone;	// 명세 RED-01 v2.49 (MAIN이 씀)
 
 (* 2) 받기: 새 값이 오는지 *)
 bNew := _stRx.nSeq <> _nLastSeq;
 _nLastSeq := _stRx.nSeq;
 _tonFresh(IN := NOT bNew, PT := i_tTimeout);
-q_bFresh := _stRx.nProtoVer = 2 AND _stRx.nSeq <> 0 AND NOT _tonFresh.Q;
+q_bFresh := _stRx.nProtoVer = 3 AND _stRx.nSeq <> 0 AND NOT _tonFresh.Q;
 
 (* 3) 맞추기: 내가 Active가 아니고 상대가 Active일 때만 다른 것만 덮어씀 *)
 q_bInSync := FALSE;
@@ -159,6 +161,8 @@ IF i_bApply AND q_bFresh THEN
 		bEq := FALSE;
 	END_IF
 	q_bInSync := bEq;
+	// 사고 대응 된 동작 (명세 RED-01 v2.49): 설정이 아니므로 기억만 함. 내가 Active가 되면 MAIN이 이어받음
+	GVL_IF.g_awPeerRespDone := _stRx.awUpsRespDone;
 END_IF]]></ST>
     </Implementation>
     <LineIds Name="FB_RedSync">
