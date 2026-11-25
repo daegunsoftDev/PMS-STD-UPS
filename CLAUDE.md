@@ -3,7 +3,7 @@
 - **문서 우선순위 (2026-11-16, 사용자 결정. 2026-11-10 "UPSstd 우선"을 대신함):**
   1. 명세서(`명세작업\UPS_명세서.md`)가 가장 위다. 명세와 코드가 다르면 명세를 따른다.
   2. 코드 문서 중에서는 `UPSstd\PMS_STD.md`가 **항상** 우선한다. 실제 자동화에는 PMS_STD.md만 남기 때문이다.
-  3. 그다음이 UPSstd의 나머지 md(README_UPS_CHARGE.md, README_UPS_DRIVER.md, README_UPS_TEST_CONFIG.md, UPS_MQTT_INTERFACE.md)다.
+  3. 그다음이 UPSstd의 나머지 md다. (2026-11-25: UPS 전용 md 4개 README_UPS_CHARGE·README_UPS_DRIVER·README_UPS_TEST_CONFIG·UPS_MQTT_INTERFACE는 10-30~11-02 기록이라 낡아 지움. 그 내용은 명세서가 대신한다.)
   4. 그 밖의 md(정보·회의록)는 참고만 한다.
 - **명세 기반 자동화 (2026-11-16, 사용자 결정):** 사용자가 자료를 모두 주면 Claude가 명세 md를 만들고, 질문을 모두 마친 뒤 자동화를 시작한다.
   - 자동화가 시작되면 **명세 변경 = 수정 지시**다. "수정해"를 따로 기다리지 않는다.

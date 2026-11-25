@@ -4,7 +4,7 @@
 
 - 대상: TwinCAT 3.1.4024 기반 PMS 표준 PLC 코드. 보호 조건·대응 모듈, SOC 제한, EMS 지령원, 장비 드라이버와 접속점 그룹 단위 제어 모드를 다룬다. 제어 모드는 7장, 시험 기록과 남은 검증은 10장을 참고한다.
   - 기록된 가상 시험 결과는 제어 모드 자동 시험 42건과 실경로 시험 3종이다 (10장). 이 기록은 이후 변경된 코드 전체의 빌드·동작 검증을 뜻하지 않는다.
-  - 실제 장비 등록·시험 모드·장비 쓰기 여부는 `90_Project/GVL_SITE`를 확인한다. 이 작업본의 현장별 장비 구성과 검증 범위는 별도 `README_UPS_DRIVER.md`에 기록한다. 표준의 가상 PCS·BMS·계측기와 제어 모드 코드는 재사용을 위해 유지하며, 선언만 남아 있는 장비를 설치된 장비로 간주하지 않는다.
+  - 실제 장비 등록·시험 모드·장비 쓰기 여부는 `90_Project/GVL_SITE`를 확인한다. UPS 현장의 동작(장비·인터페이스·사고 대응·이중화 추가분)은 `명세작업\UPS_명세서.md`가 기준이다 (예전 UPS 전용 md 4개는 낡아 2026-11-25 지움). 표준의 가상 PCS·BMS·계측기와 제어 모드 코드는 재사용을 위해 유지하며, 선언만 남아 있는 장비를 설치된 장비로 간주하지 않는다.
   - MQTT 로거 발행(`pms_log` 토픽, `20_Module/Mqtt/Logger`)과 로그 문구 길이 규칙(7장)을 더했다. 토픽은 `dgspms/ups/{사이트}/pms_log` (`GVL_MQTT.SOLUTION_NAME = 'ups'`, 사이트는 `GVL_SITE.MQTT_SET.nSiteId`, 지금 3). 이중화면 Active PLC만 로그를 보낸다.
   - **로거 MQTT(`pms_log`)를 쓰려면 제어기 TwinCAT 런타임이 3.1.4024.17 이상이어야 한다** (`FB_ListenerBase2`). 낮으면 구독이 `16#98110701`(서비스 미지원)로 실패해 로그가 하나도 나가지 않는다. 메인 머지 전 코드에서 4024.17로 리스너 수신·발행을 확인했다 (4장 "로그가 EMS까지 가는 길"). 머지 뒤 빌드·시험은 아직이다.
   - **이중화는 PLC 2대 실기로 시험했다** (2026-10-28, `DEVICE_WRITE = FALSE`): 통신 단선·상대 정지 판정, 시작 순서, 역할 충돌, 절체(Primary 정지 → Secondary가 약 1 s에 Active), 복귀(약 10 s 뒤 Failback), 설정 동기화, 멈췄다 이어짐, 이벤트 로그. 7장 "이중화". 램프 시작값·Manual 유닛 승격 동작과 MQTT 이중화 대응은 시험하지 않았다 (10장).
@@ -1328,6 +1328,7 @@ RedundancyTask (선택, 가장 높게, 우선순위 1)      PRG_Redundancy   이
 - 적용: 내가 Active가 아니고, 상대가 Active이며, EAP가 정상일 때만. 값이 다른 필드만 덮어써서 저장(`FB_PersistSave`)이 불필요하게 일어나지 않는다. Standby에서 설정을 바꿔도 Active 값으로 되돌아온다.
 - 복귀 조건: Primary는 Standby에서 `g_bSyncInSync`(내 설정이 상대 Active와 같음)가 TRUE여야 `Handover`로 간다.
 - 상대 값이 `i_tTimeout`(2 s) 안에 안 오면 낡은 것으로 본다 (`g_bSyncFresh = FALSE`).
+- **UPS 프로젝트 추가분 (명세 RED-01):** UPS 설정 보관값(`g_astUpsDesired`, 14칸), 사고·고장 대응 스위치(`g_bUpsSafetyRespEnable`), 사고 대응 된 동작 기억(`awUpsRespDone`: 대기 쪽은 기억만 하고 Active가 되는 순간 이어받아 이미 한 동작을 다시 보내지 않음). 형식 번호 4. `ST_RedSyncCfg`는 끝의 남는 자리(`abSpare`)로 **512 B 고정**이다. 칸을 늘리면 `abSpare`를 그만큼 줄여 512 B를 지킨다 (XAE EAP 변수를 다시 바꾸지 않으려고). 두 PLC 모두 장비를 읽고 쓰기는 Active만 한다 (명세 RED-02 v2.52, 이 장의 코어 방식과 같음).
 
 **운영 규칙**
 
@@ -1351,6 +1352,7 @@ RedundancyTask (선택, 가장 높게, 우선순위 1)      PRG_Redundancy   이
 
 5. I/O 연결: `fbRedLink._bDoAlive`·`_bDoActive`(EL2004 채널 1·2), `_bDiPeerAlive`·`_bDiPeerActive`(EL1004 채널 1·2).
 6. `PRG_Redundancy`의 EAP 변수 크기는 유닛·그룹·지령원 수(`GVL_PARAM`)에 따라 바뀐다. 개수를 바꾸면 XAE에서 EAP 변수 크기를 다시 확인한다.
+7. **UPS 프로젝트:** XAE EAP 변수 목록에 PLC 타입이 안 나와 BYTE 배열로 만든다. ID 1 하트비트 `ARRAY [0..15] OF BYTE`(16 B), ID 2 동기화 `ARRAY [0..511] OF BYTE`(512 B). 크기가 PLC 변수와 같아야 링크 목록에 뜬다. 링크가 걸린 변수는 타입을 못 바꾸므로 링크를 지우고 바꾼 뒤 다시 건다.
 
 **확인용 변수** (`GVL_IF`)
 
