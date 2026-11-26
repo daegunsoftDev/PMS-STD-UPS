@@ -9,9 +9,9 @@
      1 리셋 2 버저 정지 3·4 정류부 ON·OFF 5·6 인버터 ON·OFF 7·8 BBC ON·OFF 9 인버터로 절체 10 바이패스로 절체
      11 부동충전 12 균등충전 13·14 Auto ON·OFF 15 비상 방전 16 주기적 방전 17 펄스 방전 18 방전 취소
      19·20 간헐충전 시작·취소 21·22 온도보상 시작·취소 23·24 ECO 시작·취소 25·26 PRLT 시작·취소
-   - 레코드 하나 = 명령 하나. 중복 거르기(SequenceNumber)와 Delay 대기는 앞에서 FB_EmsCmdGate가 한다
+   - 레코드 하나 = 명령 하나. 버전 2의 Delay 대기는 앞에서 FB_EmsCmdGate가 한다
    - 거부: UPS 통신이상이면 모두. UPS 고장(Status b2)이나 e-stop(b3) 중이면 켜기·시작 명령(START_TYPES). 끄기·취소·리셋은 보냄
-   - 쓰기 허용(i_bEnable)이 꺼져 있으면 실행하지 않고 Disabled. 1~26 밖은 BadRequest
+   - 쓰기 허용(i_bEnable)이 꺼져 있으면 실행하지 않고 Disabled. 장치 명령 1~26, 보고 모드 101 수동·102 자동을 받음
    - 2026-11-17: 드라이버가 바빠 기다리는 동안에도 매 스캔 다시 본다. 고장·e-stop이 생기면 대기 중인 시작 명령을 취소(BadRequest),
      쓰기 허용이 꺼지면 취소(Disabled). 끄기·취소·리셋은 그대로 보낸다
    - Fault 단계 확인은 EMS가 한다 (명세 v2.4). q_bAck는 늘 FALSE
@@ -33,10 +33,11 @@ VAR_IN_OUT
 END_VAR
 VAR_OUTPUT
 	q_bAck				: BOOL;				// Fault 단계 확인. EMS가 하므로 늘 FALSE (v2.4). v2.38부터 MAIN에서 쓰지 않음 (PMS 안 Fault 유지 없앰)
+	q_nOperationMode	: UDINT := 1;		// EMS 보고 운전모드: 0 수동(101), 1 자동(102). 시작 기본값 자동
 	q_nLastType			: UDINT;			// 마지막으로 받은 명령 번호
 	q_eLastResult		: E_UpsResult;		// 마지막 명령 결과
 	q_nRejectCount		: UDINT;			// 상태 때문에 거부한 명령 수
-	q_nUnknownCount		: UDINT;			// 1~26 밖의 번호를 받은 수
+	q_nUnknownCount		: UDINT;			// 1~26·101·102 밖의 번호를 받은 수
 	q_bDesiredChanged	: BOOL;				// 이 스캔에 켜짐 상태 보관값을 바꿈 (바로 저장 요청)
 	q_bEnableMismatch	: BOOL;				// 온도보상 복구 연속 실패 알람
 	q_nRestoreCount		: UDINT;			// 온도보상 복구로 시작 명령을 보낸 횟수
@@ -74,12 +75,20 @@ IF NOT _bInit THEN
 	_nLastSeq := i_stCmd.nSeq;
 END_IF
 
-// 1) 새 명령 (CommandType 번호 1~26)
+// 1) 새 명령 (1~26 장치, 101 수동·102 자동 보고 모드)
 IF i_stCmd.nSeq <> _nLastSeq THEN
 	_nLastSeq := i_stCmd.nSeq;
 	q_nLastType := i_stCmd.nType;
 	_nNew := i_stCmd.nType;
-	IF _nNew = 0 OR _nNew > MAX_TYPE THEN
+	IF _nNew = 101 OR _nNew = 102 THEN
+		// PMS 보고 모드만 변경한다. 세방 Auto ON/OFF(13/14)나 장치 명령은 보내지 않는다.
+		IF i_bEnable THEN
+			q_nOperationMode := _nNew - 101;
+			q_eLastResult := E_UpsResult.Accepted;
+		ELSE
+			q_eLastResult := E_UpsResult.Disabled;
+		END_IF
+	ELSIF _nNew = 0 OR _nNew > MAX_TYPE THEN
 		q_nUnknownCount := q_nUnknownCount + 1;
 		q_eLastResult := E_UpsResult.BadRequest;
 	ELSIF NOT i_bUpsValid THEN

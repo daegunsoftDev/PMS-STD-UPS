@@ -1891,6 +1891,10 @@ Run = 활성(출력 지령을 받음, 크기 무관), Standby = 대기(활성인
 
 ## 12. 데이터 참조 (인터페이스·구조체)
 
+- **UPS 보고 운전 모드 (2026-11-25 사용자 지시):** `command/ups` 101=수동(0), 102=자동(1). `MAIN.fbUpsCommand[n].q_nOperationMode`에서 유지하고 `FB_RptSebangUps.i_nOperationMode`를 통해 EMS OperationMode에 보고한다. 시작 기본값은 자동이며 장치 Auto ON/OFF(13·14)와 별개다.
+
+- **EMS command 버전 2 (2026-11-25 사용자 지시):** 통신 레코드는 `DeviceIndex · CommandType · Value · Delay`의 16 B이며 SequenceNumber는 없다. 헤더 64 B + 명령 1건 = 80 B, DeviceIndex 오프셋은 0이다. `FB_EmsCmdGate`는 Delay만 처리하고 같은 명령의 재수신을 허용한다. PLC 내부 전달용 `nSeq`는 유지한다. 디스크의 `인터페이스/100.Command.xlsx` A4는 옛 행이 남아 있어 사용자 지시와 구분한다.
+
 모듈을 만들거나 "이 값은 어디서 오나"를 답할 때 보는 표다. 단위: P kW(방전·공급 +), Q kvar(공급 +), SOC %. `ST_Val`은 `fValue` + `bValid`(FALSE면 값을 쓰지 않음)다. 코드가 바뀌면 이 장도 같이 고친다.
 
 ### 인터페이스 메서드

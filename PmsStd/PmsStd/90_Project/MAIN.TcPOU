@@ -823,7 +823,7 @@ FOR _nReportBat:=1 TO GVL_PARAM.BMS_COUNT DO
 		GVL_IF.g_stReport.astModule[(_nReportBat-1)*GVL_PARAM.RACKS_PER_BMS*GVL_PARAM.MODULES_PER_RACK+_nReportModule]:=fbRptBat[_nReportBat].q_astModule[_nReportModule];
 	END_FOR
 END_FOR
-fbRptUps[1](i_stState:=GVL_SITE.g_fbUps1.q_stState, i_nDeviceIndex:=1);
+fbRptUps[1](i_stState:=GVL_SITE.g_fbUps1.q_stState, i_nDeviceIndex:=1, i_nOperationMode:=fbUpsCommand[1].q_nOperationMode);
 FOR _nReportUps:=1 TO GVL_PARAM.UPS_COUNT DO
 	GVL_IF.g_stReport.abUpsMapped[_nReportUps]:=TRUE;
 	GVL_IF.g_stReport.abUpsValid[_nReportUps]:=fbRptUps[_nReportUps].q_bValid;

@@ -29,6 +29,7 @@ VAR_OUTPUT
 END_VAR
 VAR
 	_nErrCount		: UINT;								// 이번 스캔 오류 수
+	_tonRedReading	: TON;								// 이중화 역할을 못 정한 시간 (Reading, 명세 RED-03 v2.56)
 END_VAR
 VAR_TEMP
 	i				: UINT;
@@ -126,6 +127,9 @@ IF i_stRedSet.bUse THEN
 		M_AddConfigError("RED_SET: 이 PLC Net ID가 Primary·Secondary와 다름");
 	END_IF
 END_IF
+// 이중화 역할을 10초 넘게 못 정함: Net ID 읽기 실패(PRG_Redundancy.fbGetNetId) 또는 RedundancyTask 정지. PlcTask에서 봐서 그 태스크가 멈춰도 알 수 있음 (명세 RED-03 v2.56)
+_tonRedReading(IN := i_stRedSet.bUse AND i_eRedRole = E_RedRole.Reading, PT := T#10S);
+IF _tonRedReading.Q THEN M_AddConfigError("RED_SET: 10초 넘게 역할을 못 정함 (Net ID 읽기·RedundancyTask)"); END_IF
 
 q_nErrors	:= _nErrCount;
 q_bConfigOk	:= _nErrCount = 0;]]></ST>

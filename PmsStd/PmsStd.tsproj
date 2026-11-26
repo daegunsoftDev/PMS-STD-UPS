@@ -1883,7 +1883,7 @@
 		</System>
 		<Plc>
 			<Project GUID="{F6DC6991-4D29-4407-8E00-5D3363987721}" Name="PmsStd" PrjFilePath="PmsStd\PmsStd.plcproj" TmcFilePath="PmsStd\PmsStd.tmc" ReloadTmc="true" AmsPort="851" FileArchiveSettings="#x000e" SymbolicMapping="true">
-				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PmsStd\PmsStd.tmc" TmcHash="{FD263D59-4E53-B34A-CFD5-F3D94768A9CD}">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" KeepUnrestoredLinks="2" TmcPath="PmsStd\PmsStd.tmc" TmcHash="{723FB08A-7795-6E50-E043-A036EC68DD7D}">
 					<Name>PmsStd Instance</Name>
 					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
 					<Vars VarGrpType="1">

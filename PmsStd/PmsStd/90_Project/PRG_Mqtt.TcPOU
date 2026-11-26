@@ -147,7 +147,7 @@ IF GVL_SITE.TEST_MODE THEN
 	PRG_MqttTestData.A_HandleRx();
 END_IF
 
-(* 3-1. 명령 앞단 (인터페이스 100.Command 2026-11-12): 같은 SequenceNumber 버리기, Delay(ms)만큼 기다렸다가 핸들러에 넘김 *)
+(* 3-1. 명령 앞단 (인터페이스 100.Command 버전 2, 2026-11-25): SequenceNumber 없이 Delay(ms)만큼 기다렸다가 핸들러에 넘김 *)
 fbGatePcs(iq_astRec := g_astPcsCommand);
 fbGateBat(iq_astRec := g_astBatCommand);
 fbGateUps(iq_astRec := g_astUpsCommand);

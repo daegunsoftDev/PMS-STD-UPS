@@ -5,6 +5,7 @@
 VAR_INPUT
 	i_stState : ST_UpsState; // 장비 상태
 	i_nDeviceIndex : UDINT; // UPS 번호
+	i_nOperationMode : UDINT := 1; // 0 수동, 1 자동 (FB_UpsCommand.q_nOperationMode)
 END_VAR
 VAR_OUTPUT
 	q_stUps : ST_UpsPublish_V1; // UPS 보고값
@@ -72,9 +73,9 @@ FOR _i := 0 TO 7 DO
 END_FOR
 
 // 명세 RD-UPS-01: 상태 칸 (인터페이스 08.UPS 2026-11-12). 맵 워드: I45 정류부, I46 BBC, I48 인버터, I50 STATUS1, I51 STATUS2
-// 운전 모드 (명세 RD-UPS-01 v2.41, 사용자 결정 2026-11-23): PMS는 모드를 나누지 않음. OperationMode = 1 자동, SystemOperationMode = 0
+// 운전 모드 (2026-11-25): EMS UPS 명령 101 수동·102 자동을 반영. SystemOperationMode는 0 유지
 q_stUps.SystemOperationMode := 0;
-q_stUps.OperationMode := 1;
+q_stUps.OperationMode := i_nOperationMode;
 q_stUps.Status := 0;
 q_stUps.Status.1 := (q_stUps.Warning1 OR q_stUps.Warning2 OR q_stUps.Warning3) <> 0; // 경고 있음
 q_stUps.Status.2 := (q_stUps.Fault1 OR q_stUps.Fault2 OR q_stUps.Fault3) <> 0; // 고장 있음
